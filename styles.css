@@ -3,143 +3,475 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    background-color: var(--background-secondary);
-    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    background-color: var(--background-primary);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* Header */
+/* Header - Modern Style */
 .ai-terminal-header {
-    padding: 10px;
+    padding: 12px 16px;
     background-color: var(--background-primary);
     border-bottom: 1px solid var(--background-modifier-border);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 .ai-terminal-title {
-    font-weight: bold;
-    color: var(--text-accent);
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text-normal);
 }
 
-.dropdown {
-    background: var(--background-modifier-form-field);
+.model-selector {
+    background: var(--background-secondary);
     border: 1px solid var(--background-modifier-border);
     color: var(--text-normal);
-    padding: 2px 5px;
-    border-radius: 4px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
 
-/* Context Section */
-.ai-terminal-context {
-    padding: 10px;
-    background-color: var(--background-primary-alt);
+.model-selector:hover {
+    background: var(--background-modifier-hover);
+}
+
+.model-selector:focus {
+    outline: none;
+    border-color: var(--interactive-accent);
+}
+
+/* Context Panel - Collapsible with modern design */
+.context-panel {
+    background-color: var(--background-secondary);
     border-bottom: 1px solid var(--background-modifier-border);
+    padding: 12px 16px;
+    flex-shrink: 0;
 }
 
-.context-header {
+.context-panel-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 5px;
-    font-size: 0.8em;
-    color: var(--text-muted);
+    margin-bottom: 10px;
 }
 
-.pinned-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-}
-
-.pinned-item {
-    background-color: var(--interactive-accent);
-    color: var(--text-on-accent);
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 0.85em;
+.context-title {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
 }
 
-.remove-btn {
+.context-icon {
+    font-size: 16px;
+}
+
+.context-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.context-edit-btn {
+    padding: 4px 12px !important;
+    font-size: 12px !important;
+    border-radius: 6px !important;
+}
+
+.context-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.context-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.context-item:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.context-file-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.file-icon {
+    font-size: 14px;
+}
+
+.file-name {
+    font-size: 13px;
+    color: var(--text-normal);
+    font-weight: 500;
+}
+
+.context-remove-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
     cursor: pointer;
-    font-weight: bold;
-    opacity: 0.7;
+    font-size: 20px;
+    line-height: 1;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
 }
 
-.remove-btn:hover {
-    opacity: 1;
+.context-remove-btn:hover {
+    background-color: var(--background-modifier-error);
+    color: var(--text-error);
 }
 
-/* Chat Area */
+/* Chat Area - ChatGPT style */
 .ai-terminal-chat {
     flex-grow: 1;
     overflow-y: auto;
-    padding: 15px;
+    padding: 20px 16px;
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 16px;
+    background-color: var(--background-primary);
 }
 
-.chat-message {
-    padding: 10px;
-    border-radius: 8px;
-    max-width: 90%;
-    line-height: 1.5;
+/* Empty State */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    color: var(--text-muted);
 }
 
-.chat-message.user {
-    align-self: flex-end;
+.empty-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.empty-state h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-normal);
+}
+
+.empty-state p {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+/* Message Wrapper */
+.message-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.message-wrapper.user {
+    align-items: flex-end;
+}
+
+.message-wrapper.ai {
+    align-items: flex-start;
+}
+
+.message-wrapper.system {
+    align-items: center;
+}
+
+/* Message Bubbles - Modern ChatGPT/Claude style */
+.message-bubble {
+    max-width: 80%;
+    padding: 12px 16px;
+    border-radius: 18px;
+    word-wrap: break-word;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.user-message {
     background-color: var(--interactive-accent);
     color: var(--text-on-accent);
+    border-bottom-right-radius: 4px;
 }
 
-.chat-message.ai {
-    align-self: flex-start;
-    background-color: var(--background-primary);
+.ai-message {
+    background-color: var(--background-secondary);
     border: 1px solid var(--background-modifier-border);
+    color: var(--text-normal);
+    border-bottom-left-radius: 4px;
 }
 
-.chat-message.system {
-    align-self: center;
-    font-style: italic;
+.message-label {
+    font-size: 11px;
+    font-weight: 600;
     color: var(--text-muted);
-    font-size: 0.9em;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.chat-message strong {
-    display: block;
-    font-size: 0.75em;
-    margin-bottom: 5px;
-    opacity: 0.8;
-}
-
-.message-content {
+.message-text {
+    font-size: 14px;
+    line-height: 1.6;
     white-space: pre-wrap;
 }
 
-/* Input Area */
+/* System Messages */
+.system-message {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.system-text {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+    padding: 6px 12px;
+    background-color: var(--background-modifier-form-field);
+    border-radius: 12px;
+}
+
+/* Input Area - ChatGPT style */
 .ai-terminal-input-area {
-    padding: 10px;
+    padding: 16px;
     background-color: var(--background-primary);
     border-top: 1px solid var(--background-modifier-border);
+    flex-shrink: 0;
+}
+
+.input-wrapper {
     display: flex;
-    gap: 10px;
+    align-items: flex-end;
+    gap: 8px;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 24px;
+    padding: 8px 12px;
+    transition: all 0.2s ease;
+}
+
+.input-wrapper:focus-within {
+    border-color: var(--interactive-accent);
+    box-shadow: 0 0 0 3px rgba(var(--interactive-accent-rgb), 0.1);
+}
+
+.attach-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    padding: 8px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.attach-btn:hover {
+    background-color: var(--background-modifier-hover);
 }
 
 .ai-terminal-input {
     flex-grow: 1;
-    height: 40px;
+    min-height: 24px;
+    max-height: 200px;
     resize: none;
-    background-color: var(--background-secondary);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 4px;
-    padding: 8px;
+    background-color: transparent;
+    border: none;
+    padding: 8px 4px;
     color: var(--text-normal);
+    font-size: 14px;
+    line-height: 1.5;
+    font-family: inherit;
+    overflow-y: auto;
 }
 
 .ai-terminal-input:focus {
+    outline: none;
+}
+
+.ai-terminal-input::placeholder {
+    color: var(--text-muted);
+}
+
+.send-btn {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.send-btn:hover {
+    background-color: var(--interactive-accent-hover);
+    transform: scale(1.05);
+}
+
+.send-btn:active {
+    transform: scale(0.95);
+}
+
+.send-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Multi-Note Suggester Modal Styles */
+.multi-note-suggester {
+    padding: 20px;
+}
+
+.multi-note-suggester h3 {
+    margin-bottom: 16px;
+    color: var(--text-normal);
+}
+
+.multi-note-search {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    color: var(--text-normal);
+    font-size: 14px;
+}
+
+.multi-note-search:focus {
+    outline: none;
     border-color: var(--interactive-accent);
+}
+
+.multi-note-count {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.multi-note-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    padding: 8px;
+    margin-bottom: 16px;
+    background-color: var(--background-secondary);
+}
+
+.multi-note-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.multi-note-item:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.multi-note-checkbox {
+    cursor: pointer;
+    width: 16px;
+    height: 16px;
+}
+
+.multi-note-item label {
+    flex: 1;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-normal);
+}
+
+.multi-note-item label.selected {
+    font-weight: 500;
+    color: var(--interactive-accent);
+}
+
+.multi-note-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.multi-note-buttons button {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid var(--background-modifier-border);
+    background-color: var(--background-secondary);
+    color: var(--text-normal);
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s ease;
+}
+
+.multi-note-buttons button:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.multi-note-buttons button.mod-cta {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border-color: var(--interactive-accent);
+}
+
+.multi-note-buttons button.mod-cta:hover {
+    background-color: var(--interactive-accent-hover);
+}
+
+/* Scrollbar Styling */
+.ai-terminal-chat::-webkit-scrollbar,
+.multi-note-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.ai-terminal-chat::-webkit-scrollbar-track,
+.multi-note-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ai-terminal-chat::-webkit-scrollbar-thumb,
+.multi-note-list::-webkit-scrollbar-thumb {
+    background: var(--background-modifier-border);
+    border-radius: 4px;
+}
+
+.ai-terminal-chat::-webkit-scrollbar-thumb:hover,
+.multi-note-list::-webkit-scrollbar-thumb:hover {
+    background: var(--text-faint);
 }

@@ -1,7 +1,7 @@
-import { ItemView, WorkspaceLeaf, Notice, TFile, setIcon, ButtonComponent } from "obsidian";
+import { ItemView, WorkspaceLeaf, Notice, TFile, ButtonComponent } from "obsidian";
 import AITerminalPlugin from "../main";
 import { AIService } from "./AIService";
-import { NoteSuggester } from "./NoteSuggester";
+import { MultiNoteSuggester } from "./NoteSuggester";
 
 export const TERMINAL_VIEW_TYPE = "ai-terminal-view";
 
@@ -42,83 +42,162 @@ export class TerminalView extends ItemView {
         container.empty();
         container.addClass("ai-terminal-container");
 
-        // 1. Header (Model Selector)
+        // 1. Modern Header with Model Selector
         const header = container.createDiv({ cls: "ai-terminal-header" });
-        header.createEl("span", { text: "TERMINAL SESSION", cls: "ai-terminal-title" });
 
-        const modelSelect = header.createEl("select", { cls: "dropdown" });
+        const headerLeft = header.createDiv({ cls: "header-left" });
+        headerLeft.createEl("span", { text: "AI Terminal", cls: "ai-terminal-title" });
+
+        const modelSelect = header.createEl("select", { cls: "model-selector" });
         const options = [
-            { value: 'google', text: '✨ Gemini 2.0' },
-            { value: 'openai', text: '🟢 GPT-4o' },
-            { value: 'anthropic', text: '✴️ Claude 3.5' }
+            { value: 'google', text: 'Gemini 2.0 Flash', icon: '✨' },
+            { value: 'openai', text: 'GPT-4o', icon: '🟢' },
+            { value: 'anthropic', text: 'Claude 3.5 Sonnet', icon: '✴️' }
         ];
         options.forEach(opt => {
-            const el = modelSelect.createEl("option", { value: opt.value, text: opt.text });
+            const el = modelSelect.createEl("option", {
+                value: opt.value,
+                text: `${opt.icon} ${opt.text}`
+            });
             if (this.currentModel === opt.value) el.selected = true;
         });
         modelSelect.onchange = (e) => {
             this.currentModel = (e.target as HTMLSelectElement).value as any;
-            new Notice(`Model switched to ${this.currentModel}`);
+            new Notice(`Switched to ${options.find(o => o.value === this.currentModel)?.text}`);
         };
 
-        // 2. Context Section
-        const contextDiv = container.createDiv({ cls: "ai-terminal-context" });
-        const contextHeader = contextDiv.createDiv({ cls: "context-header" });
-        contextHeader.createEl("strong", { text: `📌 PINNED CONTEXT (${this.pinnedNotes.length})` });
+        // 2. Context Panel (Collapsible)
+        if (this.pinnedNotes.length > 0) {
+            const contextPanel = container.createDiv({ cls: "context-panel" });
+            const contextHeader = contextPanel.createDiv({ cls: "context-panel-header" });
 
-        const addButton = new ButtonComponent(contextHeader)
-            .setIcon("plus")
-            .setTooltip("Pin Note")
-            .onClick(() => {
-                new NoteSuggester(this.app, (file) => {
-                    if (!this.pinnedNotes.includes(file)) {
-                        this.pinnedNotes.push(file);
+            const contextTitle = contextHeader.createDiv({ cls: "context-title" });
+            contextTitle.createEl("span", { text: "📎", cls: "context-icon" });
+            contextTitle.createEl("span", { text: `${this.pinnedNotes.length} notes attached` });
+
+            const contextActions = contextHeader.createDiv({ cls: "context-actions" });
+
+            new ButtonComponent(contextActions)
+                .setButtonText("Edit")
+                .setClass("context-edit-btn")
+                .onClick(() => {
+                    new MultiNoteSuggester(this.app, this.pinnedNotes, (files) => {
+                        this.pinnedNotes = files;
                         this.render();
-                        new Notice(`Pinned: ${file.basename}`);
-                    }
-                }).open();
+                        new Notice(`Updated pinned notes: ${files.length} selected`);
+                    }).open();
+                });
+
+            const contextList = contextPanel.createDiv({ cls: "context-list" });
+            this.pinnedNotes.forEach(file => {
+                const item = contextList.createDiv({ cls: "context-item" });
+
+                const fileInfo = item.createDiv({ cls: "context-file-info" });
+                fileInfo.createEl("span", { text: "📄", cls: "file-icon" });
+                fileInfo.createEl("span", { text: file.basename, cls: "file-name" });
+
+                const removeBtn = item.createEl("button", {
+                    cls: "context-remove-btn",
+                    attr: { "aria-label": "Remove note" }
+                });
+                removeBtn.innerHTML = "×";
+                removeBtn.onclick = () => {
+                    this.pinnedNotes = this.pinnedNotes.filter(f => f !== file);
+                    this.render();
+                };
             });
+        }
 
-        const pinnedList = contextDiv.createDiv({ cls: "pinned-list" });
-        this.pinnedNotes.forEach(file => {
-            const item = pinnedList.createDiv({ cls: "pinned-item" });
-            item.createEl("span", { text: file.basename });
-            const removeBtn = item.createEl("span", { cls: "remove-btn", text: "✖" });
-            removeBtn.onclick = () => {
-                this.pinnedNotes = this.pinnedNotes.filter(f => f !== file);
-                this.render();
-            };
-        });
-
-        // 3. Chat Area
+        // 3. Chat Area (Modern bubbles)
         const chatArea = container.createDiv({ cls: "ai-terminal-chat" });
-        this.chatHistory.forEach(msg => {
-            const msgDiv = chatArea.createDiv({ cls: `chat-message ${msg.role}` });
-            msgDiv.createEl("strong", { text: msg.role.toUpperCase() });
-            msgDiv.createEl("div", { text: msg.content, cls: "message-content" });
-        });
 
-        // 4. Input Area
-        const inputArea = container.createDiv({ cls: "ai-terminal-input-area" });
-        const inputEl = inputArea.createEl("textarea", {
-            cls: "ai-terminal-input",
-            attr: { placeholder: "Enter AI instruction..." }
-        });
+        if (this.chatHistory.length === 0) {
+            const emptyState = chatArea.createDiv({ cls: "empty-state" });
+            emptyState.createEl("div", { text: "👋", cls: "empty-icon" });
+            emptyState.createEl("h3", { text: "Start a conversation" });
+            emptyState.createEl("p", { text: "Attach notes and ask questions to synthesize insights" });
+        } else {
+            this.chatHistory.forEach((msg, idx) => {
+                const msgWrapper = chatArea.createDiv({ cls: `message-wrapper ${msg.role}` });
 
-        const sendBtn = new ButtonComponent(inputArea)
-            .setIcon("send")
-            .setCta()
-            .onClick(async () => {
-                const text = inputEl.value;
-                if (!text.trim()) return;
-
-                // Add User Message
-                this.chatHistory.push({ role: 'user', content: text });
-                inputEl.value = "";
-                this.render();
-
-                await this.processCommand(text);
+                if (msg.role === 'user') {
+                    const msgBubble = msgWrapper.createDiv({ cls: "message-bubble user-message" });
+                    msgBubble.createDiv({ text: msg.content, cls: "message-text" });
+                } else if (msg.role === 'ai') {
+                    const msgBubble = msgWrapper.createDiv({ cls: "message-bubble ai-message" });
+                    const modelName = options.find(o => o.value === this.currentModel)?.text || 'AI';
+                    msgBubble.createDiv({ text: modelName, cls: "message-label" });
+                    msgBubble.createDiv({ text: msg.content, cls: "message-text" });
+                } else if (msg.role === 'system') {
+                    const systemMsg = msgWrapper.createDiv({ cls: "system-message" });
+                    systemMsg.createDiv({ text: msg.content, cls: "system-text" });
+                }
             });
+
+            // Auto-scroll to bottom
+            setTimeout(() => {
+                chatArea.scrollTop = chatArea.scrollHeight;
+            }, 100);
+        }
+
+        // 4. Input Area (Modern ChatGPT-style)
+        const inputArea = container.createDiv({ cls: "ai-terminal-input-area" });
+
+        const inputWrapper = inputArea.createDiv({ cls: "input-wrapper" });
+
+        // Attach notes button
+        const attachBtn = inputWrapper.createEl("button", {
+            cls: "attach-btn",
+            attr: { "aria-label": "Attach notes" }
+        });
+        attachBtn.innerHTML = "📎";
+        attachBtn.onclick = () => {
+            new MultiNoteSuggester(this.app, this.pinnedNotes, (files) => {
+                this.pinnedNotes = files;
+                this.render();
+                new Notice(`Attached ${files.length} notes`);
+            }).open();
+        };
+
+        const inputEl = inputWrapper.createEl("textarea", {
+            cls: "ai-terminal-input",
+            attr: {
+                placeholder: "Message AI Terminal...",
+                rows: "1"
+            }
+        });
+
+        // Auto-resize textarea
+        inputEl.addEventListener("input", () => {
+            inputEl.style.height = "auto";
+            inputEl.style.height = Math.min(inputEl.scrollHeight, 200) + "px";
+        });
+
+        // Send on Enter (Shift+Enter for new line)
+        inputEl.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendBtn.click();
+            }
+        });
+
+        const sendBtn = inputWrapper.createEl("button", {
+            cls: "send-btn",
+            attr: { "aria-label": "Send message" }
+        });
+        sendBtn.innerHTML = "↑";
+        sendBtn.onclick = async () => {
+            const text = inputEl.value.trim();
+            if (!text) return;
+
+            // Add User Message
+            this.chatHistory.push({ role: 'user', content: text });
+            inputEl.value = "";
+            inputEl.style.height = "auto";
+            this.render();
+
+            await this.processCommand(text);
+        };
     }
 
     async processCommand(input: string) {
