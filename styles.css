@@ -8,6 +8,20 @@
     color: #cccccc;
     font-size: 13px;
     line-height: 1.5;
+    pointer-events: auto;
+    /* Ensure interaction */
+}
+
+/* ... */
+/* Input Area */
+.ai-terminal-input-area {
+    padding: 16px;
+    background-color: var(--background-primary);
+    border-top: 1px solid var(--background-modifier-border);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+    /* Ensure it stays on top */
 }
 
 /* Header - Real Terminal Style */
@@ -54,11 +68,13 @@
     font-family: monospace;
 }
 
-.model-selector:hover, .ui-style-selector:hover {
+.model-selector:hover,
+.ui-style-selector:hover {
     background: #3e3e42;
 }
 
-.model-selector:focus, .ui-style-selector:focus {
+.model-selector:focus,
+.ui-style-selector:focus {
     outline: none;
     border-color: #007acc;
     box-shadow: 0 0 0 1px #007acc;
@@ -479,6 +495,9 @@
     background-color: var(--background-primary);
     border-top: 1px solid var(--background-modifier-border);
     flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+    /* Ensure it stays on top */
 }
 
 .input-wrapper {

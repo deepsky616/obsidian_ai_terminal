@@ -18,12 +18,12 @@ export class TerminalView extends ItemView {
     uiStyle: 'gemini' | 'chatgpt' | 'claude' = 'gemini'; // UI theme
 
     // UI Elements
-    private container: HTMLElement;
     private headerEl: HTMLElement;
     private contextPanelEl: HTMLElement;
     private chatAreaEl: HTMLElement;
     private inputEl: HTMLTextAreaElement;
     private inputAreaEl: HTMLElement;
+    private sendBtn: HTMLButtonElement;
 
     constructor(leaf: WorkspaceLeaf, plugin: AITerminalPlugin) {
         super(leaf);
@@ -43,40 +43,44 @@ export class TerminalView extends ItemView {
     }
 
     async onOpen() {
-        // Initialize UI Structure Once
-        const contentEl = this.containerEl.children[1] as HTMLElement;
-        contentEl.empty();
-        contentEl.addClass("ai-terminal-container");
-        this.container = contentEl;
+        try {
+            // Initialize UI Structure Once
+            const contentEl = this.contentEl; // Use standard contentEl
+            contentEl.empty();
+            contentEl.addClass("ai-terminal-container");
 
-        // 1. Header Container
-        this.headerEl = this.container.createDiv({ cls: "ai-terminal-header" });
+            // 1. Header Container
+            this.headerEl = contentEl.createDiv({ cls: "ai-terminal-header" });
 
-        // 2. Context Panel Container
-        this.contextPanelEl = this.container.createDiv({ cls: "context-panel-container" }); // Wrapper to toggle visibility
+            // 2. Context Panel Container
+            this.contextPanelEl = contentEl.createDiv({ cls: "context-panel-container" });
 
-        // 3. Chat Area Container
-        this.chatAreaEl = this.container.createDiv({ cls: "ai-terminal-chat" });
+            // 3. Chat Area Container
+            this.chatAreaEl = contentEl.createDiv({ cls: "ai-terminal-chat" });
 
-        // 4. Input Area (Persistent)
-        this.inputAreaEl = this.container.createDiv({ cls: "ai-terminal-input-area" });
-        this.initializeInputArea();
+            // 4. Input Area (Persistent)
+            this.inputAreaEl = contentEl.createDiv({ cls: "ai-terminal-input-area" });
+            this.initializeInputArea();
 
-        // Initial Render of components
-        this.refreshStyle();
-        this.refreshHeader();
-        this.refreshContext();
-        this.refreshChat();
+            // Initial Render of components
+            this.refreshStyle();
+            this.refreshHeader();
+            this.refreshContext();
+            this.refreshChat();
 
-        // Auto-attach currently active note when opening terminal
-        this.attachActiveNote();
+            // Auto-attach currently active note when opening terminal
+            this.attachActiveNote();
 
-        // Listen for active leaf changes to auto-attach new notes
-        this.registerEvent(
-            this.app.workspace.on('active-leaf-change', () => {
-                this.attachActiveNote();
-            })
-        );
+            // Listen for active leaf changes to auto-attach new notes
+            this.registerEvent(
+                this.app.workspace.on('active-leaf-change', () => {
+                    this.attachActiveNote();
+                })
+            );
+        } catch (e: any) {
+            new Notice(`Failed to initialize AI Terminal: ${e.message}`);
+            console.error("AI Terminal Init Error:", e);
+        }
     }
 
     initializeInputArea() {
@@ -93,6 +97,8 @@ export class TerminalView extends ItemView {
                 this.pinnedNotes = files;
                 this.refreshContext();
                 new Notice(`Attached ${files.length} notes`);
+                // Ensure focus returns to input
+                setTimeout(() => this.inputEl?.focus(), 100);
             }).open();
         };
 
@@ -106,11 +112,11 @@ export class TerminalView extends ItemView {
         }) as HTMLTextAreaElement;
 
         // Send Button
-        const sendBtn = inputWrapper.createEl("button", {
+        this.sendBtn = inputWrapper.createEl("button", {
             cls: "send-btn",
             attr: { "aria-label": "Send message" }
         }) as HTMLButtonElement;
-        sendBtn.innerHTML = "↑";
+        this.sendBtn.innerHTML = "↑";
 
         // Auto-resize textarea
         const resizeTextarea = () => {
@@ -128,6 +134,12 @@ export class TerminalView extends ItemView {
             this.chatHistory.push({ role: 'user', content: text });
             this.inputEl.value = "";
             this.inputEl.style.height = "auto";
+
+            // Explicitly enable input to be safe
+            this.inputEl.disabled = false;
+            this.sendBtn.disabled = false;
+            if (this.inputEl) this.inputEl.focus();
+
             this.refreshChat();
 
             await this.processCommand(text);
@@ -141,7 +153,7 @@ export class TerminalView extends ItemView {
             }
         });
 
-        sendBtn.addEventListener("click", sendMessage);
+        this.sendBtn.addEventListener("click", sendMessage);
 
         // Initial focus
         setTimeout(() => {
@@ -150,13 +162,15 @@ export class TerminalView extends ItemView {
     }
 
     refreshStyle() {
+        if (!this.contentEl) return;
         // Remove old style classes
-        this.container.removeClass("ui-style-gemini", "ui-style-chatgpt", "ui-style-claude");
+        this.contentEl.removeClass("ui-style-gemini", "ui-style-chatgpt", "ui-style-claude");
         // Add new style class
-        this.container.addClass(`ui-style-${this.uiStyle}`);
+        this.contentEl.addClass(`ui-style-${this.uiStyle}`);
     }
 
     refreshHeader() {
+        if (!this.headerEl) return;
         this.headerEl.empty();
 
         const headerLeft = this.headerEl.createDiv({ cls: "header-left" });
@@ -181,7 +195,7 @@ export class TerminalView extends ItemView {
             if (this.uiStyle === 'gemini') this.currentModel = 'google';
             else if (this.uiStyle === 'chatgpt') this.currentModel = 'openai';
             else if (this.uiStyle === 'claude') this.currentModel = 'anthropic';
-            
+
             this.refreshStyle();
             this.refreshHeader(); // Re-render header to update model select
         };
@@ -206,8 +220,13 @@ export class TerminalView extends ItemView {
     }
 
     refreshContext() {
+        if (!this.contextPanelEl) return;
         this.contextPanelEl.empty();
-        
+
+        // Force enable inputs
+        if (this.inputEl) this.inputEl.disabled = false;
+        if (this.sendBtn) this.sendBtn.disabled = false;
+
         if (this.pinnedNotes.length > 0) {
             this.contextPanelEl.style.display = 'block';
             const contextPanel = this.contextPanelEl.createDiv({ cls: "context-panel" });
@@ -254,12 +273,17 @@ export class TerminalView extends ItemView {
     }
 
     refreshChat() {
+        if (!this.chatAreaEl) return;
         this.chatAreaEl.empty();
 
+        // Force enable inputs
+        if (this.inputEl) this.inputEl.disabled = false;
+        if (this.sendBtn) this.sendBtn.disabled = false;
+
         const options = [
-             { value: 'google', text: 'Gemini 2.0 Flash', icon: '✨' },
-             { value: 'openai', text: 'GPT-4o', icon: '🟢' },
-             { value: 'anthropic', text: 'Claude 3.5 Sonnet', icon: '✴️' }
+            { value: 'google', text: 'Gemini 2.0 Flash', icon: '✨' },
+            { value: 'openai', text: 'GPT-4o', icon: '🟢' },
+            { value: 'anthropic', text: 'Claude 3.5 Sonnet', icon: '✴️' }
         ];
 
         if (this.chatHistory.length === 0) {
@@ -307,13 +331,17 @@ export class TerminalView extends ItemView {
     }
 
     attachActiveNote() {
-        const activeFile = this.app.workspace.getActiveFile();
-        if (activeFile && activeFile.extension === 'md') {
-            if (!this.pinnedNotes.includes(activeFile)) {
-                this.pinnedNotes.push(activeFile);
-                new Notice(`Auto-attached: ${activeFile.basename}`);
-                this.refreshContext();
+        try {
+            const activeFile = this.app.workspace.getActiveFile();
+            if (activeFile && activeFile.extension === 'md') {
+                if (!this.pinnedNotes.includes(activeFile)) {
+                    this.pinnedNotes.push(activeFile);
+                    new Notice(`Auto-attached: ${activeFile.basename}`);
+                    this.refreshContext();
+                }
             }
+        } catch (e) {
+            console.error("Auto-attach error", e);
         }
     }
 
