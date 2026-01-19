@@ -117,7 +117,7 @@ export class TerminalView extends ItemView {
             emptyState.createEl("h3", { text: "Start a conversation" });
             emptyState.createEl("p", { text: "Attach notes and ask questions to synthesize insights" });
         } else {
-            this.chatHistory.forEach((msg, idx) => {
+            this.chatHistory.forEach((msg) => {
                 const msgWrapper = chatArea.createDiv({ cls: `message-wrapper ${msg.role}` });
 
                 if (msg.role === 'user') {
@@ -165,28 +165,24 @@ export class TerminalView extends ItemView {
                 placeholder: "Message AI Terminal...",
                 rows: "1"
             }
-        });
-
-        // Auto-resize textarea
-        inputEl.addEventListener("input", () => {
-            inputEl.style.height = "auto";
-            inputEl.style.height = Math.min(inputEl.scrollHeight, 200) + "px";
-        });
-
-        // Send on Enter (Shift+Enter for new line)
-        inputEl.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                sendBtn.click();
-            }
-        });
+        }) as HTMLTextAreaElement;
 
         const sendBtn = inputWrapper.createEl("button", {
             cls: "send-btn",
             attr: { "aria-label": "Send message" }
-        });
+        }) as HTMLButtonElement;
         sendBtn.innerHTML = "↑";
-        sendBtn.onclick = async () => {
+
+        // Auto-resize textarea
+        const resizeTextarea = () => {
+            inputEl.style.height = "auto";
+            inputEl.style.height = Math.min(inputEl.scrollHeight, 200) + "px";
+        };
+
+        inputEl.addEventListener("input", resizeTextarea);
+
+        // Send message function
+        const sendMessage = async () => {
             const text = inputEl.value.trim();
             if (!text) return;
 
@@ -198,6 +194,21 @@ export class TerminalView extends ItemView {
 
             await this.processCommand(text);
         };
+
+        // Send on Enter (Shift+Enter for new line)
+        inputEl.addEventListener("keydown", (e: KeyboardEvent) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        sendBtn.addEventListener("click", sendMessage);
+
+        // Focus input on render (only if chat is empty or after sending)
+        setTimeout(() => {
+            inputEl.focus();
+        }, 50);
     }
 
     async processCommand(input: string) {
