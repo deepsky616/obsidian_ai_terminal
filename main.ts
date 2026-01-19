@@ -40,6 +40,22 @@ export default class AITerminalPlugin extends Plugin {
             }
         });
 
+        // Command to open terminal with current note attached
+        this.addCommand({
+            id: 'open-ai-terminal-with-note',
+            name: 'Open AI Terminal with current note',
+            checkCallback: (checking: boolean) => {
+                const activeFile = this.app.workspace.getActiveFile();
+                if (activeFile && activeFile.extension === 'md') {
+                    if (!checking) {
+                        this.activateView();
+                    }
+                    return true;
+                }
+                return false;
+            }
+        });
+
         this.addSettingTab(new AITerminalSettingTab(this.app, this));
     }
 

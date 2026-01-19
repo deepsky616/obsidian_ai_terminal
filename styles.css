@@ -56,75 +56,186 @@
     border-color: var(--interactive-accent);
 }
 
-/* UI Style Themes */
+/* UI Style Themes - CLI Style */
 
-/* Gemini UI - Blue/Purple gradient theme */
+/* Gemini CLI - Terminal style with blue accent */
+.ui-style-gemini {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+}
+
 .ui-style-gemini .ai-terminal-header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-bottom: none;
+    background: #1a1a1a;
+    border-bottom: 2px solid #4285f4;
+    padding: 8px 16px;
 }
 
 .ui-style-gemini .model-selector,
 .ui-style-gemini .ui-style-selector {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
-    color: white;
+    background: #2d2d2d;
+    border: 1px solid #4285f4;
+    color: #4285f4;
+    font-family: monospace;
+    font-weight: bold;
+}
+
+.ui-style-gemini .ai-terminal-chat {
+    background: #0d0d0d;
 }
 
 .ui-style-gemini .user-message {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: transparent;
+    border-left: 3px solid #4285f4;
+    color: #4285f4;
+    border-radius: 0;
+    padding-left: 12px;
 }
 
 .ui-style-gemini .ai-message {
-    background-color: rgba(102, 126, 234, 0.1);
-    border-color: rgba(102, 126, 234, 0.3);
+    background: transparent;
+    border-left: 3px solid #34a853;
+    border-radius: 0;
+    border: none;
+    padding-left: 12px;
 }
 
-/* ChatGPT UI - Green theme */
+.ui-style-gemini .message-label {
+    color: #34a853;
+    font-family: monospace;
+}
+
+.ui-style-gemini .message-text {
+    font-family: monospace;
+    color: #e8eaed;
+}
+
+/* ChatGPT CLI - Terminal style with green accent */
+.ui-style-chatgpt {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+}
+
 .ui-style-chatgpt .ai-terminal-header {
-    background-color: #10a37f;
-    border-bottom: none;
+    background: #0d1117;
+    border-bottom: 2px solid #10a37f;
+    padding: 8px 16px;
 }
 
 .ui-style-chatgpt .model-selector,
 .ui-style-chatgpt .ui-style-selector {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
-    color: white;
+    background: #161b22;
+    border: 1px solid #10a37f;
+    color: #10a37f;
+    font-family: monospace;
+    font-weight: bold;
+}
+
+.ui-style-chatgpt .ai-terminal-chat {
+    background: #010409;
 }
 
 .ui-style-chatgpt .user-message {
-    background-color: #10a37f;
-    color: white;
+    background: transparent;
+    border-left: 3px solid #10a37f;
+    color: #10a37f;
+    border-radius: 0;
+    padding-left: 12px;
 }
 
 .ui-style-chatgpt .ai-message {
-    background-color: rgba(16, 163, 127, 0.1);
-    border-color: rgba(16, 163, 127, 0.3);
+    background: transparent;
+    border-left: 3px solid #58a6ff;
+    border-radius: 0;
+    border: none;
+    padding-left: 12px;
 }
 
-/* Claude UI - Orange/Coral theme */
+.ui-style-chatgpt .message-label {
+    color: #58a6ff;
+    font-family: monospace;
+}
+
+.ui-style-chatgpt .message-text {
+    font-family: monospace;
+    color: #c9d1d9;
+}
+
+/* Claude Code CLI - Terminal style with orange accent */
+.ui-style-claude {
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+}
+
 .ui-style-claude .ai-terminal-header {
-    background: linear-gradient(135deg, #cc785c 0%, #d97757 100%);
-    border-bottom: none;
+    background: #1c1c1c;
+    border-bottom: 2px solid #d97757;
+    padding: 8px 16px;
 }
 
 .ui-style-claude .model-selector,
 .ui-style-claude .ui-style-selector {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
-    color: white;
+    background: #2d2d2d;
+    border: 1px solid #d97757;
+    color: #d97757;
+    font-family: monospace;
+    font-weight: bold;
+}
+
+.ui-style-claude .ai-terminal-chat {
+    background: #0f0f0f;
 }
 
 .ui-style-claude .user-message {
-    background: linear-gradient(135deg, #cc785c 0%, #d97757 100%);
-    color: white;
+    background: transparent;
+    border-left: 3px solid #d97757;
+    color: #d97757;
+    border-radius: 0;
+    padding-left: 12px;
 }
 
 .ui-style-claude .ai-message {
-    background-color: rgba(204, 120, 92, 0.1);
-    border-color: rgba(204, 120, 92, 0.3);
+    background: transparent;
+    border-left: 3px solid #a0a0a0;
+    border-radius: 0;
+    border: none;
+    padding-left: 12px;
+}
+
+.ui-style-claude .message-label {
+    color: #a0a0a0;
+    font-family: monospace;
+}
+
+.ui-style-claude .message-text {
+    font-family: monospace;
+    color: #d4d4d4;
+}
+
+/* CLI-style input for all themes */
+.ui-style-gemini .input-wrapper,
+.ui-style-chatgpt .input-wrapper,
+.ui-style-claude .input-wrapper {
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.ui-style-gemini .ai-terminal-input,
+.ui-style-chatgpt .ai-terminal-input,
+.ui-style-claude .ai-terminal-input {
+    font-family: monospace;
+}
+
+/* CLI prompt style */
+.ui-style-gemini .user-message::before {
+    content: "❯ ";
+    font-weight: bold;
+}
+
+.ui-style-chatgpt .user-message::before {
+    content: "$ ";
+    font-weight: bold;
+}
+
+.ui-style-claude .user-message::before {
+    content: "> ";
+    font-weight: bold;
 }
 
 /* Context Panel */
