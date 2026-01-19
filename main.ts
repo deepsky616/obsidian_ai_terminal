@@ -1,16 +1,18 @@
-import { App, Plugin, PluginSettingTab, Setting, WorkspaceLeaf, ItemView } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Setting, WorkspaceLeaf } from 'obsidian';
 import { TerminalView, TERMINAL_VIEW_TYPE } from './src/TerminalView';
 
 interface PluginSettings {
     googleApiKey: string;
     openaiApiKey: string;
     anthropicApiKey: string;
+    defaultFolder: string;
 }
 
 const DEFAULT_SETTINGS: PluginSettings = {
     googleApiKey: '',
     openaiApiKey: '',
-    anthropicApiKey: ''
+    anthropicApiKey: '',
+    defaultFolder: ''
 }
 
 export default class AITerminalPlugin extends Plugin {
@@ -81,6 +83,9 @@ class AITerminalSettingTab extends PluginSettingTab {
         containerEl.empty();
         containerEl.createEl('h2', { text: 'AI Terminal Settings' });
 
+        // API Keys Section
+        containerEl.createEl('h3', { text: 'API Keys' });
+
         new Setting(containerEl)
             .setName('Google Gemini API Key')
             .setDesc('Enter your Google Gemini API Key')
@@ -111,6 +116,20 @@ class AITerminalSettingTab extends PluginSettingTab {
                 .setValue(this.plugin.settings.anthropicApiKey)
                 .onChange(async (value) => {
                     this.plugin.settings.anthropicApiKey = value;
+                    await this.plugin.saveSettings();
+                }));
+
+        // Note Creation Section
+        containerEl.createEl('h3', { text: 'Note Creation' });
+
+        new Setting(containerEl)
+            .setName('Default Folder')
+            .setDesc('Default folder for creating new notes from AI responses. Leave empty for vault root.')
+            .addText(text => text
+                .setPlaceholder('AI Notes')
+                .setValue(this.plugin.settings.defaultFolder)
+                .onChange(async (value) => {
+                    this.plugin.settings.defaultFolder = value;
                     await this.plugin.saveSettings();
                 }));
     }

@@ -125,8 +125,22 @@ export class TerminalView extends ItemView {
                     msgBubble.createDiv({ text: msg.content, cls: "message-text" });
                 } else if (msg.role === 'ai') {
                     const msgBubble = msgWrapper.createDiv({ cls: "message-bubble ai-message" });
+
+                    const msgHeader = msgBubble.createDiv({ cls: "message-header" });
                     const modelName = options.find(o => o.value === this.currentModel)?.text || 'AI';
-                    msgBubble.createDiv({ text: modelName, cls: "message-label" });
+                    msgHeader.createDiv({ text: modelName, cls: "message-label" });
+
+                    // Create Note button
+                    const createNoteBtn = msgHeader.createEl("button", {
+                        cls: "create-note-btn",
+                        attr: { "aria-label": "Create note from response" }
+                    });
+                    createNoteBtn.innerHTML = "📝";
+                    createNoteBtn.onclick = async (e) => {
+                        e.stopPropagation();
+                        await this.createNoteFromResponse(msg.content);
+                    };
+
                     msgBubble.createDiv({ text: msg.content, cls: "message-text" });
                 } else if (msg.role === 'system') {
                     const systemMsg = msgWrapper.createDiv({ cls: "system-message" });
@@ -209,6 +223,54 @@ export class TerminalView extends ItemView {
         setTimeout(() => {
             inputEl.focus();
         }, 50);
+    }
+
+    async createNoteFromResponse(content: string) {
+        try {
+            // Get default folder from settings
+            const defaultFolder = this.plugin.settings.defaultFolder || '';
+
+            // Generate note title from first line or timestamp
+            const firstLine = content.split('\n')[0].substring(0, 50);
+            const timestamp = new Date().toISOString().substring(0, 19).replace(/:/g, '-');
+            const noteTitle = firstLine.trim() || `AI Response ${timestamp}`;
+
+            // Sanitize filename
+            const sanitizedTitle = noteTitle.replace(/[\\/:*?"<>|]/g, '-');
+
+            // Construct full path
+            const folderPath = defaultFolder ? `${defaultFolder}/` : '';
+            const fullPath = `${folderPath}${sanitizedTitle}.md`;
+
+            // Check if folder exists, create if needed
+            if (defaultFolder) {
+                const folderExists = this.app.vault.getAbstractFileByPath(defaultFolder);
+                if (!folderExists) {
+                    await this.app.vault.createFolder(defaultFolder);
+                }
+            }
+
+            // Check if file already exists
+            let finalPath = fullPath;
+            let counter = 1;
+            while (this.app.vault.getAbstractFileByPath(finalPath)) {
+                const baseName = sanitizedTitle;
+                finalPath = `${folderPath}${baseName} ${counter}.md`;
+                counter++;
+            }
+
+            // Create the note
+            const file = await this.app.vault.create(finalPath, content);
+
+            new Notice(`Note created: ${file.basename}`);
+
+            // Optionally open the note
+            const leaf = this.app.workspace.getLeaf(false);
+            await leaf.openFile(file);
+
+        } catch (e: any) {
+            new Notice(`Failed to create note: ${e.message}`);
+        }
     }
 
     async processCommand(input: string) {
