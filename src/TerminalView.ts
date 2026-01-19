@@ -5,6 +5,21 @@ import { MultiNoteSuggester } from "./NoteSuggester";
 
 export const TERMINAL_VIEW_TYPE = "ai-terminal-view";
 
+const PROVIDER_MODELS = {
+    'gemini': [
+        { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash' },
+        { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro' }
+    ],
+    'openai': [
+        { id: 'gpt-4o', name: 'GPT-4o' },
+        { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' }
+    ],
+    'anthropic': [
+        { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet' },
+        { id: 'claude-3-opus', name: 'Claude 3 Opus' }
+    ]
+};
+
 interface ChatMessage {
     role: 'user' | 'ai' | 'system';
     content: string;
@@ -14,8 +29,10 @@ export class TerminalView extends ItemView {
     plugin: AITerminalPlugin;
     pinnedNotes: TFile[] = [];
     chatHistory: ChatMessage[] = [];
-    currentModel: 'google' | 'openai' | 'anthropic' = 'google'; // Default
-    uiStyle: 'gemini' | 'chatgpt' | 'claude' = 'gemini'; // UI theme
+
+    // UI State
+    currentProvider: 'gemini' | 'openai' | 'anthropic' = 'gemini';
+    currentModel: string = 'gemini-2.0-flash';
 
     // UI Elements
     private headerEl: HTMLElement;
@@ -24,6 +41,7 @@ export class TerminalView extends ItemView {
     private inputEl: HTMLTextAreaElement;
     private inputAreaEl: HTMLElement;
     private sendBtn: HTMLButtonElement;
+    private modelSelectEl: HTMLSelectElement;
 
     constructor(leaf: WorkspaceLeaf, plugin: AITerminalPlugin) {
         super(leaf);
@@ -45,7 +63,7 @@ export class TerminalView extends ItemView {
     async onOpen() {
         try {
             // Initialize UI Structure Once
-            const contentEl = this.contentEl; // Use standard contentEl
+            const contentEl = this.contentEl;
             contentEl.empty();
             contentEl.addClass("ai-terminal-container");
 
@@ -67,6 +85,7 @@ export class TerminalView extends ItemView {
             this.refreshHeader();
             this.refreshContext();
             this.refreshChat();
+            this.updateModelSelector();
 
             // Auto-attach currently active note when opening terminal
             this.attachActiveNote();
@@ -86,8 +105,21 @@ export class TerminalView extends ItemView {
     initializeInputArea() {
         const inputWrapper = this.inputAreaEl.createDiv({ cls: "input-wrapper" });
 
+        // 1. Top Bar: Model Selector Pill
+        const topBar = inputWrapper.createDiv({ cls: "input-top-bar" });
+
+        this.modelSelectEl = topBar.createEl("select", {
+            cls: "model-pill-select"
+        });
+        this.modelSelectEl.onchange = (e) => {
+            this.currentModel = (e.target as HTMLSelectElement).value;
+        };
+
+        // 2. Main Input Grid
+        const mainInput = inputWrapper.createDiv({ cls: "input-main" });
+
         // Attach notes button
-        const attachBtn = inputWrapper.createEl("button", {
+        const attachBtn = mainInput.createEl("button", {
             cls: "attach-btn",
             attr: { "aria-label": "Attach notes" }
         });
@@ -97,22 +129,21 @@ export class TerminalView extends ItemView {
                 this.pinnedNotes = files;
                 this.refreshContext();
                 new Notice(`Attached ${files.length} notes`);
-                // Ensure focus returns to input
                 setTimeout(() => this.inputEl?.focus(), 100);
             }).open();
         };
 
         // Text Input
-        this.inputEl = inputWrapper.createEl("textarea", {
+        this.inputEl = mainInput.createEl("textarea", {
             cls: "ai-terminal-input",
             attr: {
-                placeholder: "Message AI Terminal...",
+                placeholder: "Ask anything...",
                 rows: "1"
             }
         }) as HTMLTextAreaElement;
 
         // Send Button
-        this.sendBtn = inputWrapper.createEl("button", {
+        this.sendBtn = mainInput.createEl("button", {
             cls: "send-btn",
             attr: { "aria-label": "Send message" }
         }) as HTMLButtonElement;
@@ -161,62 +192,61 @@ export class TerminalView extends ItemView {
         }, 50);
     }
 
+    updateModelSelector() {
+        if (!this.modelSelectEl) return;
+        this.modelSelectEl.empty();
+
+        const models = PROVIDER_MODELS[this.currentProvider];
+        models.forEach(m => {
+            const opt = this.modelSelectEl.createEl("option", {
+                value: m.id,
+                text: m.name
+            });
+            if (this.currentModel === m.id) opt.selected = true;
+        });
+    }
+
     refreshStyle() {
         if (!this.contentEl) return;
-        // Remove old style classes
         this.contentEl.removeClass("ui-style-gemini", "ui-style-chatgpt", "ui-style-claude");
-        // Add new style class
-        this.contentEl.addClass(`ui-style-${this.uiStyle}`);
+
+        // Map provider to style class
+        const styleMap = {
+            'gemini': 'gemini',
+            'openai': 'chatgpt',
+            'anthropic': 'claude'
+        };
+        this.contentEl.addClass(`ui-style-${styleMap[this.currentProvider]}`);
     }
 
     refreshHeader() {
         if (!this.headerEl) return;
         this.headerEl.empty();
 
-        const headerLeft = this.headerEl.createDiv({ cls: "header-left" });
+        const tabsContainer = this.headerEl.createDiv({ cls: "provider-tabs" });
 
-        // UI Style selector
-        const uiStyleSelect = headerLeft.createEl("select", { cls: "ui-style-selector" });
-        const uiStyles = [
-            { value: 'gemini', text: '✨ Gemini UI' },
-            { value: 'chatgpt', text: '🟢 ChatGPT UI' },
-            { value: 'claude', text: '✴️ Claude UI' }
+        const providers = [
+            { id: 'gemini', label: 'Gemini' },
+            { id: 'openai', label: 'ChatGPT' },
+            { id: 'anthropic', label: 'Claude' }
         ];
-        uiStyles.forEach(style => {
-            const el = uiStyleSelect.createEl("option", {
-                value: style.value,
-                text: style.text
-            });
-            if (this.uiStyle === style.value) el.selected = true;
-        });
-        uiStyleSelect.onchange = (e) => {
-            this.uiStyle = (e.target as HTMLSelectElement).value as any;
-            // Auto-switch model to match UI style
-            if (this.uiStyle === 'gemini') this.currentModel = 'google';
-            else if (this.uiStyle === 'chatgpt') this.currentModel = 'openai';
-            else if (this.uiStyle === 'claude') this.currentModel = 'anthropic';
 
-            this.refreshStyle();
-            this.refreshHeader(); // Re-render header to update model select
-        };
-
-        const modelSelect = this.headerEl.createEl("select", { cls: "model-selector" });
-        const options = [
-            { value: 'google', text: 'Gemini 2.0 Flash', icon: '✨' },
-            { value: 'openai', text: 'GPT-4o', icon: '🟢' },
-            { value: 'anthropic', text: 'Claude 3.5 Sonnet', icon: '✴️' }
-        ];
-        options.forEach(opt => {
-            const el = modelSelect.createEl("option", {
-                value: opt.value,
-                text: `${opt.icon} ${opt.text}`
+        providers.forEach(p => {
+            const tab = tabsContainer.createEl("button", {
+                cls: `provider-tab ${this.currentProvider === p.id ? 'active' : ''}`,
+                text: p.label,
+                attr: { "data-provider": p.id }
             });
-            if (this.currentModel === opt.value) el.selected = true;
+            tab.onclick = () => {
+                this.currentProvider = p.id as any;
+                // Set default model for new provider
+                this.currentModel = PROVIDER_MODELS[this.currentProvider][0].id;
+
+                this.refreshStyle();
+                this.refreshHeader();
+                this.updateModelSelector();
+            };
         });
-        modelSelect.onchange = (e) => {
-            this.currentModel = (e.target as HTMLSelectElement).value as any;
-            new Notice(`Switched to ${options.find(o => o.value === this.currentModel)?.text}`);
-        };
     }
 
     refreshContext() {
@@ -245,7 +275,7 @@ export class TerminalView extends ItemView {
                     new MultiNoteSuggester(this.app, this.pinnedNotes, (files) => {
                         this.pinnedNotes = files;
                         this.refreshContext();
-                        new Notice(`Updated pinned notes: ${files.length} selected`);
+                        new Notice(`Updated pinned notes`);
                     }).open();
                 });
 
@@ -262,7 +292,8 @@ export class TerminalView extends ItemView {
                     attr: { "aria-label": "Remove note" }
                 });
                 removeBtn.innerHTML = "×";
-                removeBtn.onclick = () => {
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation(); // FIX: Stop event propagation
                     this.pinnedNotes = this.pinnedNotes.filter(f => f !== file);
                     this.refreshContext();
                 };
@@ -276,21 +307,14 @@ export class TerminalView extends ItemView {
         if (!this.chatAreaEl) return;
         this.chatAreaEl.empty();
 
-        // Force enable inputs
         if (this.inputEl) this.inputEl.disabled = false;
         if (this.sendBtn) this.sendBtn.disabled = false;
-
-        const options = [
-            { value: 'google', text: 'Gemini 2.0 Flash', icon: '✨' },
-            { value: 'openai', text: 'GPT-4o', icon: '🟢' },
-            { value: 'anthropic', text: 'Claude 3.5 Sonnet', icon: '✴️' }
-        ];
 
         if (this.chatHistory.length === 0) {
             const emptyState = this.chatAreaEl.createDiv({ cls: "empty-state" });
             emptyState.createEl("div", { text: "👋", cls: "empty-icon" });
-            emptyState.createEl("h3", { text: "Start a conversation" });
-            emptyState.createEl("p", { text: "Attach notes and ask questions to synthesize insights" });
+            emptyState.createEl("h3", { text: "Hello, Friend" });
+            emptyState.createEl("p", { text: "I'm ready to help you with your notes." });
         } else {
             this.chatHistory.forEach((msg) => {
                 const msgWrapper = this.chatAreaEl.createDiv({ cls: `message-wrapper ${msg.role}` });
@@ -302,13 +326,11 @@ export class TerminalView extends ItemView {
                     const msgBubble = msgWrapper.createDiv({ cls: "message-bubble ai-message" });
 
                     const msgHeader = msgBubble.createDiv({ cls: "message-header" });
-                    const modelName = options.find(o => o.value === this.currentModel)?.text || 'AI';
-                    msgHeader.createDiv({ text: modelName, cls: "message-label" });
+                    msgHeader.createDiv({ text: "AI", cls: "message-label" });
 
-                    // Create Note button
                     const createNoteBtn = msgHeader.createEl("button", {
                         cls: "create-note-btn",
-                        attr: { "aria-label": "Create note from response" }
+                        attr: { "aria-label": "Create note" }
                     });
                     createNoteBtn.innerHTML = "📝";
                     createNoteBtn.onclick = async (e) => {
@@ -323,7 +345,6 @@ export class TerminalView extends ItemView {
                 }
             });
 
-            // Auto-scroll to bottom
             setTimeout(() => {
                 this.chatAreaEl.scrollTop = this.chatAreaEl.scrollHeight;
             }, 100);
@@ -336,7 +357,7 @@ export class TerminalView extends ItemView {
             if (activeFile && activeFile.extension === 'md') {
                 if (!this.pinnedNotes.includes(activeFile)) {
                     this.pinnedNotes.push(activeFile);
-                    new Notice(`Auto-attached: ${activeFile.basename}`);
+                    new Notice(`Attached: ${activeFile.basename}`);
                     this.refreshContext();
                 }
             }
@@ -347,22 +368,14 @@ export class TerminalView extends ItemView {
 
     async createNoteFromResponse(content: string) {
         try {
-            // Get default folder from settings
             const defaultFolder = this.plugin.settings.defaultFolder || '';
-
-            // Generate note title from first line or timestamp
             const firstLine = content.split('\n')[0].substring(0, 50);
             const timestamp = new Date().toISOString().substring(0, 19).replace(/:/g, '-');
             const noteTitle = firstLine.trim() || `AI Response ${timestamp}`;
-
-            // Sanitize filename
             const sanitizedTitle = noteTitle.replace(/[\\/:*?"<>|]/g, '-');
-
-            // Construct full path
             const folderPath = defaultFolder ? `${defaultFolder}/` : '';
             const fullPath = `${folderPath}${sanitizedTitle}.md`;
 
-            // Check if folder exists, create if needed
             if (defaultFolder) {
                 const folderExists = this.app.vault.getAbstractFileByPath(defaultFolder);
                 if (!folderExists) {
@@ -370,7 +383,6 @@ export class TerminalView extends ItemView {
                 }
             }
 
-            // Check if file already exists
             let finalPath = fullPath;
             let counter = 1;
             while (this.app.vault.getAbstractFileByPath(finalPath)) {
@@ -379,12 +391,8 @@ export class TerminalView extends ItemView {
                 counter++;
             }
 
-            // Create the note
             const file = await this.app.vault.create(finalPath, content);
-
             new Notice(`Note created: ${file.basename}`);
-
-            // Optionally open the note
             const leaf = this.app.workspace.getLeaf(false);
             await leaf.openFile(file);
 
@@ -394,7 +402,6 @@ export class TerminalView extends ItemView {
     }
 
     async processCommand(input: string) {
-        // Collect Context
         let contextText = "";
         for (const file of this.pinnedNotes) {
             const content = await this.app.vault.read(file);
@@ -404,7 +411,6 @@ export class TerminalView extends ItemView {
         const systemPrompt = "You are an expert knowledge synthesizer. Output in Markdown.";
         const fullPrompt = `Context:\n${contextText}\n\nInstruction:\n${input}`;
 
-        // Add Loading Placeholder
         this.chatHistory.push({ role: 'system', content: "Generating..." });
         this.refreshChat();
 
@@ -412,15 +418,14 @@ export class TerminalView extends ItemView {
             let response = "";
             const { settings } = this.plugin;
 
-            if (this.currentModel === 'google') {
-                response = await AIService.callGoogle(settings.googleApiKey, 'gemini-2.0-flash', systemPrompt, fullPrompt);
-            } else if (this.currentModel === 'openai') {
-                response = await AIService.callOpenAI(settings.openaiApiKey, 'gpt-4o', systemPrompt, fullPrompt);
-            } else if (this.currentModel === 'anthropic') {
-                response = await AIService.callAnthropic(settings.anthropicApiKey, 'claude-3-5-sonnet', systemPrompt, fullPrompt);
+            if (this.currentProvider === 'gemini') {
+                response = await AIService.callGoogle(settings.googleApiKey, this.currentModel, systemPrompt, fullPrompt);
+            } else if (this.currentProvider === 'openai') {
+                response = await AIService.callOpenAI(settings.openaiApiKey, this.currentModel, systemPrompt, fullPrompt);
+            } else if (this.currentProvider === 'anthropic') {
+                response = await AIService.callAnthropic(settings.anthropicApiKey, this.currentModel, systemPrompt, fullPrompt);
             }
 
-            // Remove placeholder and add response
             this.chatHistory.pop();
             this.chatHistory.push({ role: 'ai', content: response });
         } catch (e: any) {

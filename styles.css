@@ -25,241 +25,111 @@
 }
 
 /* Header - Real Terminal Style */
+/* Header - Tab Style */
 .ai-terminal-header {
-    padding: 6px 12px;
-    background-color: #1e1e1e;
-    border-bottom: 1px solid #333333;
+    padding: 0;
+    background-color: transparent;
+    border-bottom: 1px solid var(--background-modifier-border);
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: center;
     flex-shrink: 0;
-    font-family: monospace;
-    font-size: 11px;
+    font-family: inherit;
 }
 
-.header-left {
+.provider-tabs {
     display: flex;
-    align-items: center;
-    gap: 8px;
+    gap: 2px;
+    padding: 0 8px;
 }
 
-.ui-style-selector {
-    background: #2d2d30;
-    border: 1px solid #3e3e42;
-    color: #cccccc;
-    padding: 4px 8px;
-    border-radius: 3px;
-    font-size: 11px;
-    cursor: pointer;
-    transition: background 0.1s ease;
-    font-family: monospace;
-    font-weight: normal;
-}
-
-.model-selector {
-    background: #2d2d30;
-    border: 1px solid #3e3e42;
-    color: #cccccc;
-    padding: 4px 8px;
-    border-radius: 3px;
-    font-size: 11px;
-    cursor: pointer;
-    transition: background 0.1s ease;
-    font-family: monospace;
-}
-
-.model-selector:hover,
-.ui-style-selector:hover {
-    background: #3e3e42;
-}
-
-.model-selector:focus,
-.ui-style-selector:focus {
-    outline: none;
-    border-color: #007acc;
-    box-shadow: 0 0 0 1px #007acc;
-}
-
-/* UI Style Themes - CLI Style */
-
-/* Gemini CLI - Terminal style with blue accent */
-.ui-style-gemini {
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
-}
-
-.ui-style-gemini .ai-terminal-header {
-    background: #1a1a1a;
-    border-bottom: 2px solid #4285f4;
+.provider-tab {
     padding: 8px 16px;
-}
-
-.ui-style-gemini .model-selector,
-.ui-style-gemini .ui-style-selector {
-    background: #2d2d2d;
-    border: 1px solid #4285f4;
-    color: #4285f4;
-    font-family: monospace;
-    font-weight: bold;
-}
-
-.ui-style-gemini .ai-terminal-chat {
-    background: #0d0d0d;
-}
-
-.ui-style-gemini .user-message {
     background: transparent;
-    border-left: 3px solid #4285f4;
-    color: #4285f4;
-    border-radius: 0;
-    padding-left: 12px;
-}
-
-.ui-style-gemini .ai-message {
-    background: transparent;
-    border-left: 3px solid #34a853;
-    border-radius: 0;
     border: none;
-    padding-left: 12px;
+    border-bottom: 2px solid transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border-radius: 4px 4px 0 0;
 }
 
-.ui-style-gemini .message-label {
-    color: #34a853;
-    font-family: monospace;
+.provider-tab:hover {
+    background-color: var(--background-modifier-hover);
+    color: var(--text-normal);
 }
 
-.ui-style-gemini .message-text {
-    font-family: monospace;
-    color: #e8eaed;
+.provider-tab.active {
+    color: var(--text-normal);
+    font-weight: 600;
 }
 
-/* ChatGPT CLI - Terminal style with green accent */
-.ui-style-chatgpt {
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+/* Tab Active States */
+.ui-style-gemini .provider-tab[data-provider="gemini"] {
+    border-bottom-color: #4285f4;
+    color: #4285f4;
 }
 
-.ui-style-chatgpt .ai-terminal-header {
-    background: #0d1117;
-    border-bottom: 2px solid #10a37f;
-    padding: 8px 16px;
-}
-
-.ui-style-chatgpt .model-selector,
-.ui-style-chatgpt .ui-style-selector {
-    background: #161b22;
-    border: 1px solid #10a37f;
+.ui-style-chatgpt .provider-tab[data-provider="chatgpt"] {
+    border-bottom-color: #10a37f;
     color: #10a37f;
-    font-family: monospace;
-    font-weight: bold;
 }
 
-.ui-style-chatgpt .ai-terminal-chat {
-    background: #010409;
+.ui-style-claude .provider-tab[data-provider="claude"] {
+    border-bottom-color: #d97757;
+    color: #d97757;
+}
+
+/* UI Style Themes - Clean App Style */
+.ui-style-gemini .user-message {
+    background-color: #e8f0fe;
+    /* Light blue */
+    color: #1967d2;
+    border: none;
+    border-radius: 12px 12px 0 12px;
+}
+
+.theme-dark .ui-style-gemini .user-message {
+    background-color: #2c333a;
+    /* Dark blue-grey */
+    color: #8ab4f8;
 }
 
 .ui-style-chatgpt .user-message {
-    background: transparent;
-    border-left: 3px solid #10a37f;
-    color: #10a37f;
-    border-radius: 0;
-    padding-left: 12px;
-}
-
-.ui-style-chatgpt .ai-message {
-    background: transparent;
-    border-left: 3px solid #58a6ff;
-    border-radius: 0;
+    background-color: #e6fffa;
+    color: #0f766e;
     border: none;
-    padding-left: 12px;
 }
 
-.ui-style-chatgpt .message-label {
-    color: #58a6ff;
-    font-family: monospace;
-}
-
-.ui-style-chatgpt .message-text {
-    font-family: monospace;
-    color: #c9d1d9;
-}
-
-/* Claude Code CLI - Terminal style with orange accent */
-.ui-style-claude {
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
-}
-
-.ui-style-claude .ai-terminal-header {
-    background: #1c1c1c;
-    border-bottom: 2px solid #d97757;
-    padding: 8px 16px;
-}
-
-.ui-style-claude .model-selector,
-.ui-style-claude .ui-style-selector {
-    background: #2d2d2d;
-    border: 1px solid #d97757;
-    color: #d97757;
-    font-family: monospace;
-    font-weight: bold;
-}
-
-.ui-style-claude .ai-terminal-chat {
-    background: #0f0f0f;
+.theme-dark .ui-style-chatgpt .user-message {
+    background-color: #1c2b29;
+    color: #2dd4bf;
 }
 
 .ui-style-claude .user-message {
-    background: transparent;
-    border-left: 3px solid #d97757;
-    color: #d97757;
-    border-radius: 0;
-    padding-left: 12px;
-}
-
-.ui-style-claude .ai-message {
-    background: transparent;
-    border-left: 3px solid #a0a0a0;
-    border-radius: 0;
+    background-color: #fff7ed;
+    color: #9a3412;
     border: none;
-    padding-left: 12px;
 }
 
-.ui-style-claude .message-label {
-    color: #a0a0a0;
-    font-family: monospace;
+.theme-dark .ui-style-claude .user-message {
+    background-color: #2c2520;
+    color: #fdba74;
 }
 
-.ui-style-claude .message-text {
-    font-family: monospace;
-    color: #d4d4d4;
-}
-
-/* CLI-style input for all themes */
-.ui-style-gemini .input-wrapper,
-.ui-style-chatgpt .input-wrapper,
-.ui-style-claude .input-wrapper {
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.05);
-}
-
+/* CLI-style overrides removal */
 .ui-style-gemini .ai-terminal-input,
 .ui-style-chatgpt .ai-terminal-input,
 .ui-style-claude .ai-terminal-input {
-    font-family: monospace;
+    font-family: inherit;
 }
 
-/* CLI prompt style */
-.ui-style-gemini .user-message::before {
-    content: "❯ ";
-    font-weight: bold;
-}
-
-.ui-style-chatgpt .user-message::before {
-    content: "$ ";
-    font-weight: bold;
-}
-
+.ui-style-gemini .user-message::before,
+.ui-style-chatgpt .user-message::before,
 .ui-style-claude .user-message::before {
-    content: "> ";
-    font-weight: bold;
+    content: none;
 }
 
 /* Context Panel */
@@ -500,15 +370,68 @@
     /* Ensure it stays on top */
 }
 
+/* Input Area Wrapper */
 .input-wrapper {
     display: flex;
-    align-items: flex-end;
+    flex-direction: column;
+    /* Stack model selector and input grid */
     gap: 8px;
     background-color: var(--background-secondary);
     border: 1px solid var(--background-modifier-border);
-    border-radius: 24px;
-    padding: 8px 12px;
+    border-radius: 16px;
+    padding: 12px;
     transition: all 0.2s ease;
+}
+
+.input-top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.input-main {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    width: 100%;
+}
+
+.model-pill-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background-color: var(--background-modifier-form-field);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 16px;
+    padding: 4px 24px 4px 12px;
+    font-size: 11px;
+    color: var(--text-normal);
+    cursor: pointer;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23888888%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 8px;
+    transition: all 0.2s ease;
+}
+
+.model-pill-select:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.model-pill-select:focus {
+    box-shadow: 0 0 0 2px var(--interactive-accent);
+    outline: none;
+}
+
+/* Reduced Font Size for Notes */
+.file-name {
+    flex: 1;
+    cursor: pointer;
+    font-size: 11px !important;
+    /* Smaller size */
+    color: var(--text-normal);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .input-wrapper:focus-within {
@@ -668,7 +591,8 @@
 .file-name {
     flex: 1;
     cursor: pointer;
-    font-size: 13px;
+    font-size: 11px;
+    /* Smaller */
     color: var(--text-normal);
 }
 
