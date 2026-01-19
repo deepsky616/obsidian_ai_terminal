@@ -24,10 +24,16 @@
     gap: 12px;
 }
 
-.ai-terminal-title {
-    font-weight: 600;
-    font-size: 15px;
+.ui-style-selector {
+    background: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
     color: var(--text-normal);
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 600;
 }
 
 .model-selector {
@@ -41,16 +47,87 @@
     transition: all 0.2s ease;
 }
 
-.model-selector:hover {
+.model-selector:hover, .ui-style-selector:hover {
     background: var(--background-modifier-hover);
 }
 
-.model-selector:focus {
+.model-selector:focus, .ui-style-selector:focus {
     outline: none;
     border-color: var(--interactive-accent);
 }
 
-/* Context Panel - Collapsible with modern design */
+/* UI Style Themes */
+
+/* Gemini UI - Blue/Purple gradient theme */
+.ui-style-gemini .ai-terminal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-bottom: none;
+}
+
+.ui-style-gemini .model-selector,
+.ui-style-gemini .ui-style-selector {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+.ui-style-gemini .user-message {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.ui-style-gemini .ai-message {
+    background-color: rgba(102, 126, 234, 0.1);
+    border-color: rgba(102, 126, 234, 0.3);
+}
+
+/* ChatGPT UI - Green theme */
+.ui-style-chatgpt .ai-terminal-header {
+    background-color: #10a37f;
+    border-bottom: none;
+}
+
+.ui-style-chatgpt .model-selector,
+.ui-style-chatgpt .ui-style-selector {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+.ui-style-chatgpt .user-message {
+    background-color: #10a37f;
+    color: white;
+}
+
+.ui-style-chatgpt .ai-message {
+    background-color: rgba(16, 163, 127, 0.1);
+    border-color: rgba(16, 163, 127, 0.3);
+}
+
+/* Claude UI - Orange/Coral theme */
+.ui-style-claude .ai-terminal-header {
+    background: linear-gradient(135deg, #cc785c 0%, #d97757 100%);
+    border-bottom: none;
+}
+
+.ui-style-claude .model-selector,
+.ui-style-claude .ui-style-selector {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+.ui-style-claude .user-message {
+    background: linear-gradient(135deg, #cc785c 0%, #d97757 100%);
+    color: white;
+}
+
+.ui-style-claude .ai-message {
+    background-color: rgba(204, 120, 92, 0.1);
+    border-color: rgba(204, 120, 92, 0.3);
+}
+
+/* Context Panel */
 .context-panel {
     background-color: var(--background-secondary);
     border-bottom: 1px solid var(--background-modifier-border);
@@ -144,7 +221,7 @@
     color: var(--text-error);
 }
 
-/* Chat Area - ChatGPT style */
+/* Chat Area */
 .ai-terminal-chat {
     flex-grow: 1;
     overflow-y: auto;
@@ -202,7 +279,7 @@
     align-items: center;
 }
 
-/* Message Bubbles - Modern ChatGPT/Claude style */
+/* Message Bubbles */
 .message-bubble {
     max-width: 80%;
     padding: 12px 16px;
@@ -277,7 +354,7 @@
     border-radius: 12px;
 }
 
-/* Input Area - ChatGPT style */
+/* Input Area */
 .ai-terminal-input-area {
     padding: 16px;
     background-color: var(--background-primary);
@@ -370,7 +447,7 @@
     cursor: not-allowed;
 }
 
-/* Multi-Note Suggester Modal Styles */
+/* Multi-Note Suggester Modal */
 .multi-note-suggester {
     padding: 20px;
 }
@@ -415,12 +492,13 @@
 
 .multi-note-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 10px;
     padding: 8px 10px;
     border-radius: 6px;
     cursor: pointer;
     transition: background-color 0.15s ease;
+    margin-bottom: 4px;
 }
 
 .multi-note-item:hover {
@@ -431,18 +509,67 @@
     cursor: pointer;
     width: 16px;
     height: 16px;
+    margin-top: 2px;
+    flex-shrink: 0;
 }
 
-.multi-note-item label {
+.file-content-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.file-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.file-name {
     flex: 1;
     cursor: pointer;
     font-size: 13px;
     color: var(--text-normal);
 }
 
-.multi-note-item label.selected {
+.file-name.selected {
     font-weight: 500;
     color: var(--interactive-accent);
+}
+
+.preview-btn {
+    background: transparent;
+    border: 1px solid var(--background-modifier-border);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.preview-btn:hover {
+    background-color: var(--background-modifier-hover);
+    border-color: var(--interactive-accent);
+}
+
+.file-preview {
+    padding: 8px;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.4;
+    max-height: 150px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+}
+
+.file-preview.hidden {
+    display: none;
 }
 
 .multi-note-buttons {
@@ -478,22 +605,26 @@
 
 /* Scrollbar Styling */
 .ai-terminal-chat::-webkit-scrollbar,
-.multi-note-list::-webkit-scrollbar {
+.multi-note-list::-webkit-scrollbar,
+.file-preview::-webkit-scrollbar {
     width: 8px;
 }
 
 .ai-terminal-chat::-webkit-scrollbar-track,
-.multi-note-list::-webkit-scrollbar-track {
+.multi-note-list::-webkit-scrollbar-track,
+.file-preview::-webkit-scrollbar-track {
     background: transparent;
 }
 
 .ai-terminal-chat::-webkit-scrollbar-thumb,
-.multi-note-list::-webkit-scrollbar-thumb {
+.multi-note-list::-webkit-scrollbar-thumb,
+.file-preview::-webkit-scrollbar-thumb {
     background: var(--background-modifier-border);
     border-radius: 4px;
 }
 
 .ai-terminal-chat::-webkit-scrollbar-thumb:hover,
-.multi-note-list::-webkit-scrollbar-thumb:hover {
+.multi-note-list::-webkit-scrollbar-thumb:hover,
+.file-preview::-webkit-scrollbar-thumb:hover {
     background: var(--text-faint);
 }

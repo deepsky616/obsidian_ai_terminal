@@ -104,11 +104,11 @@ export class MultiNoteSuggester extends Modal {
         );
     }
 
-    renderList() {
+    async renderList() {
         this.listContainer.empty();
         const filtered = this.getFilteredFiles();
 
-        filtered.forEach(file => {
+        for (const file of filtered) {
             const item = this.listContainer.createDiv({ cls: "multi-note-item" });
             const isSelected = this.selectedFiles.has(file);
 
@@ -126,15 +126,47 @@ export class MultiNoteSuggester extends Modal {
                 this.updateCount(this.contentEl.querySelector(".multi-note-count") as HTMLElement);
             };
 
-            const label = item.createEl("label", {
+            const fileContent = item.createDiv({ cls: "file-content-wrapper" });
+
+            const fileHeader = fileContent.createDiv({ cls: "file-header" });
+            const fileName = fileHeader.createEl("span", {
                 text: file.path,
-                cls: isSelected ? "selected" : ""
+                cls: isSelected ? "selected file-name" : "file-name"
             });
-            label.onclick = () => {
+
+            // Preview button
+            const previewBtn = fileHeader.createEl("button", {
+                text: "👁",
+                cls: "preview-btn"
+            });
+
+            const previewDiv = fileContent.createDiv({ cls: "file-preview hidden" });
+
+            previewBtn.onclick = async (e) => {
+                e.stopPropagation();
+                if (previewDiv.hasClass("hidden")) {
+                    // Load and show preview
+                    try {
+                        const content = await this.app.vault.read(file);
+                        const preview = content.substring(0, 300);
+                        previewDiv.setText(preview + (content.length > 300 ? "..." : ""));
+                        previewDiv.removeClass("hidden");
+                        previewBtn.setText("🔼");
+                    } catch (e: any) {
+                        previewDiv.setText(`Error loading preview: ${e.message}`);
+                        previewDiv.removeClass("hidden");
+                    }
+                } else {
+                    previewDiv.addClass("hidden");
+                    previewBtn.setText("👁");
+                }
+            };
+
+            fileName.onclick = () => {
                 checkbox.checked = !checkbox.checked;
                 checkbox.onchange?.(new Event("change"));
             };
-        });
+        }
     }
 
     updateCount(countEl: HTMLElement) {

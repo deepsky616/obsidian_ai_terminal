@@ -15,6 +15,7 @@ export class TerminalView extends ItemView {
     pinnedNotes: TFile[] = [];
     chatHistory: ChatMessage[] = [];
     currentModel: 'google' | 'openai' | 'anthropic' = 'google'; // Default
+    uiStyle: 'gemini' | 'chatgpt' | 'claude' = 'gemini'; // UI theme
 
     constructor(leaf: WorkspaceLeaf, plugin: AITerminalPlugin) {
         super(leaf);
@@ -43,10 +44,34 @@ export class TerminalView extends ItemView {
         container.addClass("ai-terminal-container");
 
         // 1. Modern Header with Model Selector
+        container.addClass(`ui-style-${this.uiStyle}`);
+
         const header = container.createDiv({ cls: "ai-terminal-header" });
 
         const headerLeft = header.createDiv({ cls: "header-left" });
-        headerLeft.createEl("span", { text: "AI Terminal", cls: "ai-terminal-title" });
+
+        // UI Style selector
+        const uiStyleSelect = headerLeft.createEl("select", { cls: "ui-style-selector" });
+        const uiStyles = [
+            { value: 'gemini', text: '✨ Gemini UI' },
+            { value: 'chatgpt', text: '🟢 ChatGPT UI' },
+            { value: 'claude', text: '✴️ Claude UI' }
+        ];
+        uiStyles.forEach(style => {
+            const el = uiStyleSelect.createEl("option", {
+                value: style.value,
+                text: style.text
+            });
+            if (this.uiStyle === style.value) el.selected = true;
+        });
+        uiStyleSelect.onchange = (e) => {
+            this.uiStyle = (e.target as HTMLSelectElement).value as any;
+            // Auto-switch model to match UI style
+            if (this.uiStyle === 'gemini') this.currentModel = 'google';
+            else if (this.uiStyle === 'chatgpt') this.currentModel = 'openai';
+            else if (this.uiStyle === 'claude') this.currentModel = 'anthropic';
+            this.render();
+        };
 
         const modelSelect = header.createEl("select", { cls: "model-selector" });
         const options = [
