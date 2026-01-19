@@ -36,14 +36,26 @@ export class TerminalView extends ItemView {
 
     async onOpen() {
         // Auto-attach currently active note when opening terminal
+        this.attachActiveNote();
+        this.render();
+
+        // Listen for active leaf changes to auto-attach new notes
+        this.registerEvent(
+            this.app.workspace.on('active-leaf-change', () => {
+                this.attachActiveNote();
+            })
+        );
+    }
+
+    attachActiveNote() {
         const activeFile = this.app.workspace.getActiveFile();
         if (activeFile && activeFile.extension === 'md') {
             if (!this.pinnedNotes.includes(activeFile)) {
                 this.pinnedNotes.push(activeFile);
                 new Notice(`Auto-attached: ${activeFile.basename}`);
+                this.render();
             }
         }
-        this.render();
     }
 
     render() {
