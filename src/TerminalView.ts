@@ -17,6 +17,14 @@ export class TerminalView extends ItemView {
     currentModel: 'google' | 'openai' | 'anthropic' = 'google'; // Default
     uiStyle: 'gemini' | 'chatgpt' | 'claude' = 'gemini'; // UI theme
 
+    // UI Elements
+    private container: HTMLElement;
+    private headerEl: HTMLElement;
+    private contextPanelEl: HTMLElement;
+    private chatAreaEl: HTMLElement;
+    private inputEl: HTMLTextAreaElement;
+    private inputAreaEl: HTMLElement;
+
     constructor(leaf: WorkspaceLeaf, plugin: AITerminalPlugin) {
         super(leaf);
         this.plugin = plugin;
@@ -35,9 +43,33 @@ export class TerminalView extends ItemView {
     }
 
     async onOpen() {
+        // Initialize UI Structure Once
+        const contentEl = this.containerEl.children[1] as HTMLElement;
+        contentEl.empty();
+        contentEl.addClass("ai-terminal-container");
+        this.container = contentEl;
+
+        // 1. Header Container
+        this.headerEl = this.container.createDiv({ cls: "ai-terminal-header" });
+
+        // 2. Context Panel Container
+        this.contextPanelEl = this.container.createDiv({ cls: "context-panel-container" }); // Wrapper to toggle visibility
+
+        // 3. Chat Area Container
+        this.chatAreaEl = this.container.createDiv({ cls: "ai-terminal-chat" });
+
+        // 4. Input Area (Persistent)
+        this.inputAreaEl = this.container.createDiv({ cls: "ai-terminal-input-area" });
+        this.initializeInputArea();
+
+        // Initial Render of components
+        this.refreshStyle();
+        this.refreshHeader();
+        this.refreshContext();
+        this.refreshChat();
+
         // Auto-attach currently active note when opening terminal
         this.attachActiveNote();
-        this.render();
 
         // Listen for active leaf changes to auto-attach new notes
         this.registerEvent(
@@ -47,28 +79,87 @@ export class TerminalView extends ItemView {
         );
     }
 
-    attachActiveNote() {
-        const activeFile = this.app.workspace.getActiveFile();
-        if (activeFile && activeFile.extension === 'md') {
-            if (!this.pinnedNotes.includes(activeFile)) {
-                this.pinnedNotes.push(activeFile);
-                new Notice(`Auto-attached: ${activeFile.basename}`);
-                this.render();
+    initializeInputArea() {
+        const inputWrapper = this.inputAreaEl.createDiv({ cls: "input-wrapper" });
+
+        // Attach notes button
+        const attachBtn = inputWrapper.createEl("button", {
+            cls: "attach-btn",
+            attr: { "aria-label": "Attach notes" }
+        });
+        attachBtn.innerHTML = "📎";
+        attachBtn.onclick = () => {
+            new MultiNoteSuggester(this.app, this.pinnedNotes, (files) => {
+                this.pinnedNotes = files;
+                this.refreshContext();
+                new Notice(`Attached ${files.length} notes`);
+            }).open();
+        };
+
+        // Text Input
+        this.inputEl = inputWrapper.createEl("textarea", {
+            cls: "ai-terminal-input",
+            attr: {
+                placeholder: "Message AI Terminal...",
+                rows: "1"
             }
-        }
+        }) as HTMLTextAreaElement;
+
+        // Send Button
+        const sendBtn = inputWrapper.createEl("button", {
+            cls: "send-btn",
+            attr: { "aria-label": "Send message" }
+        }) as HTMLButtonElement;
+        sendBtn.innerHTML = "↑";
+
+        // Auto-resize textarea
+        const resizeTextarea = () => {
+            this.inputEl.style.height = "auto";
+            this.inputEl.style.height = Math.min(this.inputEl.scrollHeight, 200) + "px";
+        };
+        this.inputEl.addEventListener("input", resizeTextarea);
+
+        // Send message function
+        const sendMessage = async () => {
+            const text = this.inputEl.value.trim();
+            if (!text) return;
+
+            // Add User Message
+            this.chatHistory.push({ role: 'user', content: text });
+            this.inputEl.value = "";
+            this.inputEl.style.height = "auto";
+            this.refreshChat();
+
+            await this.processCommand(text);
+        };
+
+        // Send on Enter (Shift+Enter for new line)
+        this.inputEl.addEventListener("keydown", (e: KeyboardEvent) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        sendBtn.addEventListener("click", sendMessage);
+
+        // Initial focus
+        setTimeout(() => {
+            if (this.inputEl) this.inputEl.focus();
+        }, 50);
     }
 
-    render() {
-        const container = this.containerEl.children[1];
-        container.empty();
-        container.addClass("ai-terminal-container");
+    refreshStyle() {
+        // Remove old style classes
+        this.container.removeClass("ui-style-gemini", "ui-style-chatgpt", "ui-style-claude");
+        // Add new style class
+        this.container.addClass(`ui-style-${this.uiStyle}`);
+    }
 
-        // 1. Modern Header with Model Selector
-        container.addClass(`ui-style-${this.uiStyle}`);
+    refreshHeader() {
+        this.headerEl.empty();
 
-        const header = container.createDiv({ cls: "ai-terminal-header" });
-
-        const headerLeft = header.createDiv({ cls: "header-left" });
+        const headerLeft = this.headerEl.createDiv({ cls: "header-left" });
 
         // UI Style selector
         const uiStyleSelect = headerLeft.createEl("select", { cls: "ui-style-selector" });
@@ -90,10 +181,12 @@ export class TerminalView extends ItemView {
             if (this.uiStyle === 'gemini') this.currentModel = 'google';
             else if (this.uiStyle === 'chatgpt') this.currentModel = 'openai';
             else if (this.uiStyle === 'claude') this.currentModel = 'anthropic';
-            this.render();
+            
+            this.refreshStyle();
+            this.refreshHeader(); // Re-render header to update model select
         };
 
-        const modelSelect = header.createEl("select", { cls: "model-selector" });
+        const modelSelect = this.headerEl.createEl("select", { cls: "model-selector" });
         const options = [
             { value: 'google', text: 'Gemini 2.0 Flash', icon: '✨' },
             { value: 'openai', text: 'GPT-4o', icon: '🟢' },
@@ -110,10 +203,14 @@ export class TerminalView extends ItemView {
             this.currentModel = (e.target as HTMLSelectElement).value as any;
             new Notice(`Switched to ${options.find(o => o.value === this.currentModel)?.text}`);
         };
+    }
 
-        // 2. Context Panel (Collapsible)
+    refreshContext() {
+        this.contextPanelEl.empty();
+        
         if (this.pinnedNotes.length > 0) {
-            const contextPanel = container.createDiv({ cls: "context-panel" });
+            this.contextPanelEl.style.display = 'block';
+            const contextPanel = this.contextPanelEl.createDiv({ cls: "context-panel" });
             const contextHeader = contextPanel.createDiv({ cls: "context-panel-header" });
 
             const contextTitle = contextHeader.createDiv({ cls: "context-title" });
@@ -128,7 +225,7 @@ export class TerminalView extends ItemView {
                 .onClick(() => {
                     new MultiNoteSuggester(this.app, this.pinnedNotes, (files) => {
                         this.pinnedNotes = files;
-                        this.render();
+                        this.refreshContext();
                         new Notice(`Updated pinned notes: ${files.length} selected`);
                     }).open();
                 });
@@ -148,22 +245,31 @@ export class TerminalView extends ItemView {
                 removeBtn.innerHTML = "×";
                 removeBtn.onclick = () => {
                     this.pinnedNotes = this.pinnedNotes.filter(f => f !== file);
-                    this.render();
+                    this.refreshContext();
                 };
             });
+        } else {
+            this.contextPanelEl.style.display = 'none';
         }
+    }
 
-        // 3. Chat Area (Modern bubbles)
-        const chatArea = container.createDiv({ cls: "ai-terminal-chat" });
+    refreshChat() {
+        this.chatAreaEl.empty();
+
+        const options = [
+             { value: 'google', text: 'Gemini 2.0 Flash', icon: '✨' },
+             { value: 'openai', text: 'GPT-4o', icon: '🟢' },
+             { value: 'anthropic', text: 'Claude 3.5 Sonnet', icon: '✴️' }
+        ];
 
         if (this.chatHistory.length === 0) {
-            const emptyState = chatArea.createDiv({ cls: "empty-state" });
+            const emptyState = this.chatAreaEl.createDiv({ cls: "empty-state" });
             emptyState.createEl("div", { text: "👋", cls: "empty-icon" });
             emptyState.createEl("h3", { text: "Start a conversation" });
             emptyState.createEl("p", { text: "Attach notes and ask questions to synthesize insights" });
         } else {
             this.chatHistory.forEach((msg) => {
-                const msgWrapper = chatArea.createDiv({ cls: `message-wrapper ${msg.role}` });
+                const msgWrapper = this.chatAreaEl.createDiv({ cls: `message-wrapper ${msg.role}` });
 
                 if (msg.role === 'user') {
                     const msgBubble = msgWrapper.createDiv({ cls: "message-bubble user-message" });
@@ -195,79 +301,20 @@ export class TerminalView extends ItemView {
 
             // Auto-scroll to bottom
             setTimeout(() => {
-                chatArea.scrollTop = chatArea.scrollHeight;
+                this.chatAreaEl.scrollTop = this.chatAreaEl.scrollHeight;
             }, 100);
         }
+    }
 
-        // 4. Input Area (Modern ChatGPT-style)
-        const inputArea = container.createDiv({ cls: "ai-terminal-input-area" });
-
-        const inputWrapper = inputArea.createDiv({ cls: "input-wrapper" });
-
-        // Attach notes button
-        const attachBtn = inputWrapper.createEl("button", {
-            cls: "attach-btn",
-            attr: { "aria-label": "Attach notes" }
-        });
-        attachBtn.innerHTML = "📎";
-        attachBtn.onclick = () => {
-            new MultiNoteSuggester(this.app, this.pinnedNotes, (files) => {
-                this.pinnedNotes = files;
-                this.render();
-                new Notice(`Attached ${files.length} notes`);
-            }).open();
-        };
-
-        const inputEl = inputWrapper.createEl("textarea", {
-            cls: "ai-terminal-input",
-            attr: {
-                placeholder: "Message AI Terminal...",
-                rows: "1"
+    attachActiveNote() {
+        const activeFile = this.app.workspace.getActiveFile();
+        if (activeFile && activeFile.extension === 'md') {
+            if (!this.pinnedNotes.includes(activeFile)) {
+                this.pinnedNotes.push(activeFile);
+                new Notice(`Auto-attached: ${activeFile.basename}`);
+                this.refreshContext();
             }
-        }) as HTMLTextAreaElement;
-
-        const sendBtn = inputWrapper.createEl("button", {
-            cls: "send-btn",
-            attr: { "aria-label": "Send message" }
-        }) as HTMLButtonElement;
-        sendBtn.innerHTML = "↑";
-
-        // Auto-resize textarea
-        const resizeTextarea = () => {
-            inputEl.style.height = "auto";
-            inputEl.style.height = Math.min(inputEl.scrollHeight, 200) + "px";
-        };
-
-        inputEl.addEventListener("input", resizeTextarea);
-
-        // Send message function
-        const sendMessage = async () => {
-            const text = inputEl.value.trim();
-            if (!text) return;
-
-            // Add User Message
-            this.chatHistory.push({ role: 'user', content: text });
-            inputEl.value = "";
-            inputEl.style.height = "auto";
-            this.render();
-
-            await this.processCommand(text);
-        };
-
-        // Send on Enter (Shift+Enter for new line)
-        inputEl.addEventListener("keydown", (e: KeyboardEvent) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
-
-        sendBtn.addEventListener("click", sendMessage);
-
-        // Focus input on render (only if chat is empty or after sending)
-        setTimeout(() => {
-            inputEl.focus();
-        }, 50);
+        }
     }
 
     async createNoteFromResponse(content: string) {
@@ -331,7 +378,7 @@ export class TerminalView extends ItemView {
 
         // Add Loading Placeholder
         this.chatHistory.push({ role: 'system', content: "Generating..." });
-        this.render();
+        this.refreshChat();
 
         try {
             let response = "";
@@ -352,6 +399,6 @@ export class TerminalView extends ItemView {
             this.chatHistory.pop();
             this.chatHistory.push({ role: 'system', content: `Error: ${e.message}` });
         }
-        this.render();
+        this.refreshChat();
     }
 }
