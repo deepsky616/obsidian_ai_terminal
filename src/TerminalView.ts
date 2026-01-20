@@ -383,8 +383,8 @@ export class TerminalView extends ItemView {
         try {
             const defaultFolder = this.plugin.settings.defaultFolder || '';
             const firstLine = content.split('\n')[0].substring(0, 50);
-            const timestamp = new Date().toISOString().substring(0, 19).replace(/:/g, '-');
-            const noteTitle = firstLine.trim() || `AI Response ${timestamp}`;
+            const timestamp = new Date().toISOString(); // ISO format for 'created'
+            const noteTitle = firstLine.replace(/["\\/]/g, '').trim() || `AI Response ${timestamp}`; // Clean title
             const sanitizedTitle = noteTitle.replace(/[\\/:*?"<>|]/g, '-');
             const folderPath = defaultFolder ? `${defaultFolder}/` : '';
             const fullPath = `${folderPath}${sanitizedTitle}.md`;
@@ -404,7 +404,23 @@ export class TerminalView extends ItemView {
                 counter++;
             }
 
-            const file = await this.app.vault.create(finalPath, content);
+            // Construct File Content with Obsidian Properties
+            const fileContent = `---
+title: "${noteTitle}"
+tags: []
+aliases: []
+created: ${timestamp}
+type: 
+priority: 
+source: "AI Terminal"
+related: []
+keywords: []
+summary: 
+---
+
+${content}`;
+
+            const file = await this.app.vault.create(finalPath, fileContent);
             new Notice(`Note created: ${file.basename}`);
             const leaf = this.app.workspace.getLeaf(false);
             await leaf.openFile(file);
