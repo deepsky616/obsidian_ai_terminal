@@ -411,6 +411,10 @@
     background-position: right 8px center;
     background-size: 8px;
     transition: all 0.2s ease;
+    pointer-events: auto;
+    /* Ensure clickable */
+    position: relative;
+    z-index: 20;
 }
 
 .model-pill-select:hover {
@@ -420,6 +424,33 @@
 .model-pill-select:focus {
     box-shadow: 0 0 0 2px var(--interactive-accent);
     outline: none;
+}
+
+/* ... existing rules ... */
+
+.context-remove-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 1;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    pointer-events: auto;
+    /* Ensure clickable */
+    z-index: 5;
+    position: relative;
+}
+
+.context-edit-btn {
+    padding: 4px 12px !important;
+    font-size: 12px !important;
+    border-radius: 6px !important;
+    pointer-events: auto;
+    /* Ensure clickable */
+    cursor: pointer;
 }
 
 /* Reduced Font Size for Notes */

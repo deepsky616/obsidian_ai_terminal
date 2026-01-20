@@ -7,16 +7,16 @@ export const TERMINAL_VIEW_TYPE = "ai-terminal-view";
 
 const PROVIDER_MODELS = {
     'gemini': [
-        { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash' },
-        { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro' }
+        { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash' },
+        { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' }
     ],
     'openai': [
         { id: 'gpt-4o', name: 'GPT-4o' },
-        { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' }
+        { id: 'o1-mini', name: 'o1-mini' }
     ],
     'anthropic': [
-        { id: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet' },
-        { id: 'claude-3-opus', name: 'Claude 3 Opus' }
+        { id: 'claude-3-5-sonnet-latest', name: 'Claude 3.5 Sonnet' },
+        { id: 'claude-3-5-haiku-latest', name: 'Claude 3.5 Haiku' }
     ]
 };
 
@@ -32,7 +32,7 @@ export class TerminalView extends ItemView {
 
     // UI State
     currentProvider: 'gemini' | 'openai' | 'anthropic' = 'gemini';
-    currentModel: string = 'gemini-2.0-flash';
+    currentModel: string = 'gemini-2.0-flash-exp';
 
     // UI Elements
     private headerEl: HTMLElement;
@@ -84,8 +84,9 @@ export class TerminalView extends ItemView {
             this.refreshStyle();
             this.refreshHeader();
             this.refreshContext();
-            this.refreshChat();
             this.updateModelSelector();
+            this.refreshChat();
+
 
             // Auto-attach currently active note when opening terminal
             this.attachActiveNote();
@@ -111,9 +112,11 @@ export class TerminalView extends ItemView {
         this.modelSelectEl = topBar.createEl("select", {
             cls: "model-pill-select"
         });
-        this.modelSelectEl.onchange = (e) => {
+        // Ensure event listener is attached
+        this.modelSelectEl.addEventListener('change', (e) => {
             this.currentModel = (e.target as HTMLSelectElement).value;
-        };
+            new Notice(`Model set to: ${this.currentModel}`);
+        });
 
         // 2. Main Input Grid
         const mainInput = inputWrapper.createDiv({ cls: "input-main" });
@@ -124,14 +127,14 @@ export class TerminalView extends ItemView {
             attr: { "aria-label": "Attach notes" }
         });
         attachBtn.innerHTML = "📎";
-        attachBtn.onclick = () => {
+        attachBtn.addEventListener('click', () => {
             new MultiNoteSuggester(this.app, this.pinnedNotes, (files) => {
                 this.pinnedNotes = files;
                 this.refreshContext();
                 new Notice(`Attached ${files.length} notes`);
                 setTimeout(() => this.inputEl?.focus(), 100);
             }).open();
-        };
+        });
 
         // Text Input
         this.inputEl = mainInput.createEl("textarea", {
@@ -237,7 +240,8 @@ export class TerminalView extends ItemView {
                 text: p.label,
                 attr: { "data-provider": p.id }
             });
-            tab.onclick = () => {
+            // Use standard event listener
+            tab.addEventListener('click', () => {
                 this.currentProvider = p.id as any;
                 // Set default model for new provider
                 this.currentModel = PROVIDER_MODELS[this.currentProvider][0].id;
@@ -245,7 +249,7 @@ export class TerminalView extends ItemView {
                 this.refreshStyle();
                 this.refreshHeader();
                 this.updateModelSelector();
-            };
+            });
         });
     }
 
@@ -292,11 +296,19 @@ export class TerminalView extends ItemView {
                     attr: { "aria-label": "Remove note" }
                 });
                 removeBtn.innerHTML = "×";
-                removeBtn.onclick = (e) => {
-                    e.stopPropagation(); // FIX: Stop event propagation
-                    this.pinnedNotes = this.pinnedNotes.filter(f => f !== file);
-                    this.refreshContext();
-                };
+
+                // FIX: Use addEventListener with stopPropagation and preventDefault
+                removeBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Filter logic
+                    const newPinned = this.pinnedNotes.filter(f => f.path !== file.path);
+                    if (newPinned.length !== this.pinnedNotes.length) {
+                        this.pinnedNotes = newPinned;
+                        this.refreshContext();
+                    }
+                });
             });
         } else {
             this.contextPanelEl.style.display = 'none';
@@ -333,10 +345,11 @@ export class TerminalView extends ItemView {
                         attr: { "aria-label": "Create note" }
                     });
                     createNoteBtn.innerHTML = "📝";
-                    createNoteBtn.onclick = async (e) => {
+
+                    createNoteBtn.addEventListener('click', async (e) => {
                         e.stopPropagation();
                         await this.createNoteFromResponse(msg.content);
-                    };
+                    });
 
                     msgBubble.createDiv({ text: msg.content, cls: "message-text" });
                 } else if (msg.role === 'system') {
@@ -355,7 +368,7 @@ export class TerminalView extends ItemView {
         try {
             const activeFile = this.app.workspace.getActiveFile();
             if (activeFile && activeFile.extension === 'md') {
-                if (!this.pinnedNotes.includes(activeFile)) {
+                if (!this.pinnedNotes.some(f => f.path === activeFile.path)) {
                     this.pinnedNotes.push(activeFile);
                     new Notice(`Attached: ${activeFile.basename}`);
                     this.refreshContext();
