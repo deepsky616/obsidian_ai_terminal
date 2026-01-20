@@ -35,12 +35,18 @@
     align-items: center;
     flex-shrink: 0;
     font-family: inherit;
+    position: relative;
+    z-index: 20;
+    /* Ensure header is above other elements */
+    pointer-events: auto;
 }
 
 .provider-tabs {
     display: flex;
     gap: 2px;
     padding: 0 8px;
+    position: relative;
+    z-index: 21;
 }
 
 .provider-tab {
@@ -54,6 +60,10 @@
     font-weight: 500;
     transition: all 0.2s ease;
     border-radius: 4px 4px 0 0;
+    position: relative;
+    z-index: 22;
+    /* Ensure tabs are clickable */
+    pointer-events: auto;
 }
 
 .provider-tab:hover {
