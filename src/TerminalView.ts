@@ -181,6 +181,7 @@ export class TerminalView extends ItemView {
 
         // Send on Enter (Shift+Enter for new line)
         this.inputEl.addEventListener("keydown", (e: KeyboardEvent) => {
+            if (e.isComposing) return;
             if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
                 sendMessage();
