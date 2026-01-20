@@ -202,21 +202,36 @@
     background-color: var(--background-modifier-hover);
 }
 
-.context-file-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex: 1;
+display: flex;
+/* Ensure flex behavior */
+align-items: center;
+/* Center vertically */
+gap: 8px;
+flex: 1;
+min-width: 0;
+/* Critical for flex child truncation */
+overflow: hidden;
+/* Hide overflow */
 }
 
 .file-icon {
     font-size: 14px;
+    flex-shrink: 0;
+    /* Prevent icon shrinking */
 }
 
 .file-name {
     font-size: 13px;
     color: var(--text-normal);
     font-weight: 500;
+    white-space: nowrap;
+    /* Prevent wrapping */
+    overflow: hidden;
+    /* Hide overflow */
+    text-overflow: ellipsis;
+    /* Show ellipsis */
+    flex: 1;
+    /* Take remaining space */
 }
 
 .context-remove-btn {
