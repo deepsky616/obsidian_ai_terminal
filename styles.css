@@ -202,16 +202,20 @@
     background-color: var(--background-modifier-hover);
 }
 
-display: flex;
-/* Ensure flex behavior */
-align-items: center;
-/* Center vertically */
-gap: 8px;
-flex: 1;
-min-width: 0;
-/* Critical for flex child truncation */
-overflow: hidden;
-/* Hide overflow */
+.context-file-info {
+    display: flex;
+    /* Ensure flex behavior */
+    align-items: center;
+    /* Center vertically */
+    gap: 8px;
+    flex: 1;
+    /* Allow it to grow */
+    min-width: 0;
+    /* Critical for flex child truncation */
+    overflow: hidden;
+    /* Hide overflow */
+    margin-right: 8px;
+    /* Add space between name and button */
 }
 
 .file-icon {
