@@ -57,7 +57,7 @@ export class TerminalView extends ItemView {
     }
 
     getIcon() {
-        return "terminal";
+        return "bot";
     }
 
     async onOpen() {
@@ -271,17 +271,7 @@ export class TerminalView extends ItemView {
             contextTitle.createEl("span", { text: `${this.pinnedNotes.length} notes attached` });
 
             const contextActions = contextHeader.createDiv({ cls: "context-actions" });
-
-            new ButtonComponent(contextActions)
-                .setButtonText("Edit")
-                .setClass("context-edit-btn")
-                .onClick(() => {
-                    new MultiNoteSuggester(this.app, this.pinnedNotes, (files) => {
-                        this.pinnedNotes = files;
-                        this.refreshContext();
-                        new Notice(`Updated pinned notes`);
-                    }).open();
-                });
+            // Edit button removed as per user request
 
             const contextList = contextPanel.createDiv({ cls: "context-list" });
             this.pinnedNotes.forEach(file => {
