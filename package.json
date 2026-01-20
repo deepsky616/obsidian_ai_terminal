@@ -1,6 +1,6 @@
 {
     "name": "obsidian-ai-terminal",
-    "version": "1.5.6",
+    "version": "1.5.7",
     "description": "AI Terminal Plugin for Obsidian",
     "main": "main.js",
     "scripts": {
