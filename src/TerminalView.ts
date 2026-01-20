@@ -8,15 +8,15 @@ export const TERMINAL_VIEW_TYPE = "ai-terminal-view";
 const PROVIDER_MODELS = {
     'gemini': [
         { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash' },
-        { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' }
+        { id: 'gemini-2.5-flash-exp', name: 'Gemini 2.5 Flash' }
     ],
     'openai': [
-        { id: 'gpt-4o', name: 'GPT-4o' },
-        { id: 'o1-mini', name: 'o1-mini' }
+        { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
+        { id: 'gpt-5-mini', name: 'GPT-5 Mini' }
     ],
     'anthropic': [
-        { id: 'claude-3-5-sonnet-latest', name: 'Claude 3.5 Sonnet' },
-        { id: 'claude-3-5-haiku-latest', name: 'Claude 3.5 Haiku' }
+        { id: 'claude-3-5-haiku-latest', name: 'Claude 3.5 Haiku' },
+        { id: 'claude-4-5-haiku-latest', name: 'Claude 4.5 Haiku' }
     ]
 };
 
