@@ -28,7 +28,7 @@ export default class AITerminalPlugin extends Plugin {
         );
 
         // Ribbon Icon
-        this.addRibbonIcon('terminal', 'Open AI Terminal', () => {
+        this.addRibbonIcon('bot', 'Open AI Terminal', () => {
             this.activateView();
         });
 
