@@ -91,12 +91,8 @@ export class TerminalView extends ItemView {
             // Auto-attach currently active note when opening terminal
             this.attachActiveNote();
 
-            // Listen for active leaf changes to auto-attach new notes
-            this.registerEvent(
-                this.app.workspace.on('active-leaf-change', () => {
-                    this.attachActiveNote();
-                })
-            );
+            // Removed 'active-leaf-change' listener to prevent auto-attaching while browsing
+            // Notes are now only attached on open or manually via the attach button.
         } catch (e: any) {
             new Notice(`Failed to initialize AI Terminal: ${e.message}`);
             console.error("AI Terminal Init Error:", e);
