@@ -190,8 +190,6 @@ export class TerminalView extends ItemView {
             menu.showAtMouseEvent(e);
         });
 
-
-
         // Text Input
         this.inputEl = mainInput.createEl("textarea", {
             cls: "ai-terminal-input",
