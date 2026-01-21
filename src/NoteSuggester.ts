@@ -1,4 +1,4 @@
-import { App, FuzzySuggestModal, TFile, Modal } from "obsidian";
+import { App, FuzzySuggestModal, TFile, TFolder, Modal } from "obsidian";
 
 export class NoteSuggester extends FuzzySuggestModal<TFile> {
     onChoose: (result: TFile) => void;
@@ -176,5 +176,28 @@ export class MultiNoteSuggester extends Modal {
     onClose() {
         const { contentEl } = this;
         contentEl.empty();
+    }
+}
+
+// Folder suggester modal
+export class FolderSuggester extends FuzzySuggestModal<TFolder> {
+    onChoose: (result: TFolder) => void;
+
+    constructor(app: App, onChoose: (result: TFolder) => void) {
+        super(app);
+        this.onChoose = onChoose;
+    }
+
+    getItems(): TFolder[] {
+        return this.app.vault.getAllLoadedFiles()
+            .filter(f => f instanceof TFolder) as TFolder[];
+    }
+
+    getItemText(item: TFolder): string {
+        return item.path;
+    }
+
+    onChooseItem(item: TFolder, evt: MouseEvent | KeyboardEvent): void {
+        this.onChoose(item);
     }
 }
