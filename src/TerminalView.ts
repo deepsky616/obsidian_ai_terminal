@@ -195,21 +195,19 @@ export class TerminalView extends ItemView {
 
                             collectFiles(folder);
 
-                            const existingPaths = new Set(this.pinnedNotes.map(f => f.path));
-                            let addedCount = 0;
-                            filesToAdd.forEach(f => {
-                                if (!existingPaths.has(f.path)) {
-                                    this.pinnedNotes.push(f);
-                                    existingPaths.add(f.path);
-                                    addedCount++;
-                                }
-                            });
-
-                            if (addedCount > 0) {
+                            if (filesToAdd.length > 0) {
+                                // Add as single attachment item
+                                this.attachments.push({
+                                    type: 'folder',
+                                    name: folder.name,
+                                    path: folder.path,
+                                    items: filesToAdd,
+                                    count: filesToAdd.length
+                                });
                                 this.refreshContext();
-                                new Notice(`Attached ${addedCount} notes from folder "${folder.name}"`);
+                                new Notice(`Attached folder "${folder.name}" (${filesToAdd.length} notes)`);
                             } else {
-                                new Notice(`No new notes found in folder "${folder.name}"`);
+                                new Notice(`No markdown notes found in "${folder.name}"`);
                             }
                             setTimeout(() => this.inputEl?.focus(), 100);
                         }).open();
