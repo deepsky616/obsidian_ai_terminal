@@ -365,7 +365,7 @@ export class TerminalView extends ItemView {
                 if (att.type === 'folder') {
                     fileInfo.createEl("span", { text: "📂", cls: "file-icon" });
                     fileInfo.createEl("span", {
-                        text: `${att.name} (${att.count})`,
+                        text: `${att.name} (${att.count} notes)`,
                         cls: "file-name folder-group"
                     });
                     item.title = att.items.map(f => f.basename).join(", ");
