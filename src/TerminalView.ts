@@ -1,4 +1,4 @@
-import { ItemView, WorkspaceLeaf, Notice, TFile, TFolder, ButtonComponent } from "obsidian";
+import { ItemView, WorkspaceLeaf, Notice, TFile, TFolder, ButtonComponent, Menu } from "obsidian";
 import AITerminalPlugin from "../main";
 import { AIService } from "./AIService";
 import { NoteSuggester, MultiNoteSuggester, FolderSuggester } from "./NoteSuggester";
