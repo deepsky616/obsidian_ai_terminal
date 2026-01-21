@@ -77,17 +77,18 @@
 }
 
 /* Tab Active States */
+/* Tab Active States */
 .ui-style-gemini .provider-tab[data-provider="gemini"] {
     border-bottom-color: #4285f4;
     color: #4285f4;
 }
 
-.ui-style-chatgpt .provider-tab[data-provider="chatgpt"] {
+.ui-style-chatgpt .provider-tab[data-provider="openai"] {
     border-bottom-color: #10a37f;
     color: #10a37f;
 }
 
-.ui-style-claude .provider-tab[data-provider="claude"] {
+.ui-style-claude .provider-tab[data-provider="anthropic"] {
     border-bottom-color: #d97757;
     color: #d97757;
 }
