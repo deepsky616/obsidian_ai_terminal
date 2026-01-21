@@ -1,7 +1,7 @@
 {
     "id": "obsidian-ai-terminal",
     "name": "AI Terminal",
-    "version": "1.6.7",
+    "version": "1.6.8",
     "minAppVersion": "0.15.0",
     "description": "A terminal-like interface for AI-powered note synthesis and context management.",
     "author": "DeepSky616",

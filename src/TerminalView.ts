@@ -33,6 +33,7 @@ export class TerminalView extends ItemView {
     // UI State
     currentProvider: 'gemini' | 'openai' | 'anthropic' = 'gemini';
     currentModel: string = 'gemini-2.0-flash-exp';
+    private lastActiveFile: TFile | null = null;
 
     // UI Elements
     private headerEl: HTMLElement;
@@ -90,15 +91,22 @@ export class TerminalView extends ItemView {
 
             // Auto-attach currently active note only when user interacts (clicks) on the terminal
             this.containerEl.addEventListener('click', () => {
-                this.attachActiveNote();
+                if (this.lastActiveFile) {
+                    this.attachNote(this.lastActiveFile);
+                } else {
+                    this.attachActiveNote();
+                }
             });
 
-            // Remove global listener to prevent spamming context
-            // this.registerEvent(
-            //     this.app.workspace.on('active-leaf-change', () => {
-            //         this.attachActiveNote();
-            //     })
-            // );
+            // Track the last active file passively
+            this.registerEvent(
+                this.app.workspace.on('active-leaf-change', () => {
+                    const file = this.app.workspace.getActiveFile();
+                    if (file) {
+                        this.lastActiveFile = file;
+                    }
+                })
+            );
         } catch (e: any) {
             new Notice(`Failed to initialize AI Terminal: ${e.message}`);
             console.error("AI Terminal Init Error:", e);
@@ -357,15 +365,21 @@ export class TerminalView extends ItemView {
         }
     }
 
+    attachNote(file: TFile) {
+        if (file && file.extension === 'md') {
+            if (!this.pinnedNotes.some(f => f.path === file.path)) {
+                this.pinnedNotes.push(file);
+                new Notice(`Attached: ${file.basename}`);
+                this.refreshContext();
+            }
+        }
+    }
+
     attachActiveNote() {
         try {
             const activeFile = this.app.workspace.getActiveFile();
-            if (activeFile && activeFile.extension === 'md') {
-                if (!this.pinnedNotes.some(f => f.path === activeFile.path)) {
-                    this.pinnedNotes.push(activeFile);
-                    new Notice(`Attached: ${activeFile.basename}`);
-                    this.refreshContext();
-                }
+            if (activeFile) {
+                this.attachNote(activeFile);
             }
         } catch (e) {
             console.error("Auto-attach error", e);
