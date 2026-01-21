@@ -190,55 +190,7 @@ export class TerminalView extends ItemView {
             menu.showAtMouseEvent(e);
         });
 
-        // Attach Folder Button
-        const attachFolderBtn = mainInput.createEl("button", {
-            cls: "attach-btn",
-            attr: { "aria-label": "Attach folder" }
-        });
-        attachFolderBtn.innerHTML = "📂";
-        attachFolderBtn.style.marginLeft = "4px"; // Add some spacing
-        attachFolderBtn.addEventListener('click', () => {
-            new FolderSuggester(this.app, (folder) => {
-                // Get all markdown files in the folder (recursive or flat? Let's do flat for now based on request "in that folder")
-                // Actually, let's explore recursively to be more useful, or strictly flat?
-                // User said "within that folder", usually implies immediate children, but recursive is often expected.
-                // Let's stick to simple children first to avoid massive inclusions.
 
-                // Using recursive approach for better UX as folders often have sub-structure
-                let filesToAdd: TFile[] = [];
-
-                const collectFiles = (folder: TFolder) => {
-                    folder.children.forEach(child => {
-                        if (child instanceof TFile && child.extension === 'md') {
-                            filesToAdd.push(child);
-                        } else if (child instanceof TFolder) {
-                            collectFiles(child);
-                        }
-                    });
-                };
-
-                collectFiles(folder);
-
-                // Add unique files to pinnedNotes
-                const existingPaths = new Set(this.pinnedNotes.map(f => f.path));
-                let addedCount = 0;
-                filesToAdd.forEach(f => {
-                    if (!existingPaths.has(f.path)) {
-                        this.pinnedNotes.push(f);
-                        existingPaths.add(f.path);
-                        addedCount++;
-                    }
-                });
-
-                if (addedCount > 0) {
-                    this.refreshContext();
-                    new Notice(`Attached ${addedCount} notes from folder "${folder.name}"`);
-                } else {
-                    new Notice(`No new notes found in folder "${folder.name}"`);
-                }
-                setTimeout(() => this.inputEl?.focus(), 100);
-            }).open();
-        });
 
         // Text Input
         this.inputEl = mainInput.createEl("textarea", {
