@@ -124,19 +124,70 @@ export class TerminalView extends ItemView {
         // 2. Main Input Grid
         const mainInput = inputWrapper.createDiv({ cls: "input-main" });
 
-        // Attach notes button
+        // Attach notes button (Unified Menu)
         const attachBtn = mainInput.createEl("button", {
             cls: "attach-btn",
-            attr: { "aria-label": "Attach notes" }
+            attr: { "aria-label": "Attach..." }
         });
         attachBtn.innerHTML = "📎";
-        attachBtn.addEventListener('click', () => {
-            new MultiNoteSuggester(this.app, this.pinnedNotes, (files) => {
-                this.pinnedNotes = files;
-                this.refreshContext();
-                new Notice(`Attached ${files.length} notes`);
-                setTimeout(() => this.inputEl?.focus(), 100);
-            }).open();
+
+        attachBtn.addEventListener('click', (e) => {
+            const menu = new Menu();
+
+            menu.addItem((item) => {
+                item.setTitle("Attach Notes")
+                    .setIcon("file-text")
+                    .onClick(() => {
+                        new MultiNoteSuggester(this.app, this.pinnedNotes, (files) => {
+                            this.pinnedNotes = files;
+                            this.refreshContext();
+                            new Notice(`Attached ${files.length} notes`);
+                            setTimeout(() => this.inputEl?.focus(), 100);
+                        }).open();
+                    });
+            });
+
+            menu.addItem((item) => {
+                item.setTitle("Attach Folder")
+                    .setIcon("folder")
+                    .onClick(() => {
+                        new FolderSuggester(this.app, (folder) => {
+                            let filesToAdd: TFile[] = [];
+
+                            const collectFiles = (folder: TFolder) => {
+                                folder.children.forEach(child => {
+                                    if (child instanceof TFile && child.extension === 'md') {
+                                        filesToAdd.push(child);
+                                    } else if (child instanceof TFolder) {
+                                        collectFiles(child);
+                                    }
+                                });
+                            };
+
+                            collectFiles(folder);
+
+                            const existingPaths = new Set(this.pinnedNotes.map(f => f.path));
+                            let addedCount = 0;
+                            filesToAdd.forEach(f => {
+                                if (!existingPaths.has(f.path)) {
+                                    this.pinnedNotes.push(f);
+                                    existingPaths.add(f.path);
+                                    addedCount++;
+                                }
+                            });
+
+                            if (addedCount > 0) {
+                                this.refreshContext();
+                                new Notice(`Attached ${addedCount} notes from folder "${folder.name}"`);
+                            } else {
+                                new Notice(`No new notes found in folder "${folder.name}"`);
+                            }
+                            setTimeout(() => this.inputEl?.focus(), 100);
+                        }).open();
+                    });
+            });
+
+            menu.showAtMouseEvent(e);
         });
 
         // Attach Folder Button
