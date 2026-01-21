@@ -25,10 +25,26 @@ interface ChatMessage {
     content: string;
 }
 
+interface AttachmentItem {
+    type: 'file' | 'folder';
+    name: string; // Basename for file, Folder name for folder
+    path: string; // Full path
+    items: TFile[]; // The actual files
+    count: number;
+}
+
 export class TerminalView extends ItemView {
     plugin: AITerminalPlugin;
-    pinnedNotes: TFile[] = [];
+    attachments: AttachmentItem[] = [];
     chatHistory: ChatMessage[] = [];
+
+    get pinnedNotes(): TFile[] {
+        const unique = new Map<string, TFile>();
+        this.attachments.forEach(att => {
+            att.items.forEach(f => unique.set(f.path, f));
+        });
+        return Array.from(unique.values());
+    }
 
     // UI State
     currentProvider: 'gemini' | 'openai' | 'anthropic' = 'gemini';
@@ -138,8 +154,21 @@ export class TerminalView extends ItemView {
                 item.setTitle("Attach Notes")
                     .setIcon("file-text")
                     .onClick(() => {
-                        new MultiNoteSuggester(this.app, this.pinnedNotes, (files) => {
-                            this.pinnedNotes = files;
+                        const currentFiles = this.attachments.filter(a => a.type === 'file').flatMap(a => a.items);
+
+                        new MultiNoteSuggester(this.app, currentFiles, (files) => {
+                            this.attachments = this.attachments.filter(a => a.type !== 'file');
+
+                            files.forEach(f => {
+                                this.attachments.push({
+                                    type: 'file',
+                                    name: f.basename,
+                                    path: f.path,
+                                    items: [f],
+                                    count: 1
+                                });
+                            });
+
                             this.refreshContext();
                             new Notice(`Attached ${files.length} notes`);
                             setTimeout(() => this.inputEl?.focus(), 100);
@@ -316,43 +345,49 @@ export class TerminalView extends ItemView {
         if (this.inputEl) this.inputEl.disabled = false;
         if (this.sendBtn) this.sendBtn.disabled = false;
 
-        if (this.pinnedNotes.length > 0) {
+        if (this.attachments.length > 0) {
             this.contextPanelEl.style.display = 'block';
             const contextPanel = this.contextPanelEl.createDiv({ cls: "context-panel" });
             const contextHeader = contextPanel.createDiv({ cls: "context-panel-header" });
 
             const contextTitle = contextHeader.createDiv({ cls: "context-title" });
+            const totalNotes = this.pinnedNotes.length; // Use getter
             contextTitle.createEl("span", { text: "📎", cls: "context-icon" });
-            contextTitle.createEl("span", { text: `${this.pinnedNotes.length} notes attached` });
+            contextTitle.createEl("span", { text: `${totalNotes} notes attached` });
 
             const contextActions = contextHeader.createDiv({ cls: "context-actions" });
-            // Edit button removed as per user request
 
             const contextList = contextPanel.createDiv({ cls: "context-list" });
-            this.pinnedNotes.forEach(file => {
+
+            this.attachments.forEach((att, index) => {
                 const item = contextList.createDiv({ cls: "context-item" });
 
                 const fileInfo = item.createDiv({ cls: "context-file-info" });
-                fileInfo.createEl("span", { text: "📄", cls: "file-icon" });
-                fileInfo.createEl("span", { text: file.basename, cls: "file-name" });
+
+                if (att.type === 'folder') {
+                    fileInfo.createEl("span", { text: "📂", cls: "file-icon" });
+                    fileInfo.createEl("span", {
+                        text: `${att.name} (${att.count})`,
+                        cls: "file-name folder-group"
+                    });
+                    item.title = att.items.map(f => f.basename).join(", ");
+                } else {
+                    fileInfo.createEl("span", { text: "📄", cls: "file-icon" });
+                    fileInfo.createEl("span", { text: att.name, cls: "file-name" });
+                }
 
                 const removeBtn = item.createEl("button", {
                     cls: "context-remove-btn",
-                    attr: { "aria-label": "Remove note" }
+                    attr: { "aria-label": "Remove" }
                 });
                 removeBtn.innerHTML = "×";
 
-                // FIX: Use addEventListener with stopPropagation and preventDefault
                 removeBtn.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
 
-                    // Filter logic
-                    const newPinned = this.pinnedNotes.filter(f => f.path !== file.path);
-                    if (newPinned.length !== this.pinnedNotes.length) {
-                        this.pinnedNotes = newPinned;
-                        this.refreshContext();
-                    }
+                    this.attachments.splice(index, 1);
+                    this.refreshContext();
                 });
             });
         } else {
@@ -413,8 +448,19 @@ export class TerminalView extends ItemView {
         try {
             const activeFile = this.app.workspace.getActiveFile();
             if (activeFile && activeFile.extension === 'md') {
-                if (!this.pinnedNotes.some(f => f.path === activeFile.path)) {
-                    this.pinnedNotes.push(activeFile);
+                // Check if already in 'file' attachments
+                // Also check if covered by folder? (optional)
+                // Let's just avoid duplicate 'file' attachment items for the same path.
+                const exists = this.attachments.some(a => a.type === 'file' && a.path === activeFile.path);
+
+                if (!exists) {
+                    this.attachments.push({
+                        type: 'file',
+                        name: activeFile.basename,
+                        path: activeFile.path,
+                        items: [activeFile],
+                        count: 1
+                    });
                     new Notice(`Attached: ${activeFile.basename}`);
                     this.refreshContext();
                 }
