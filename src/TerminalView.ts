@@ -88,11 +88,17 @@ export class TerminalView extends ItemView {
             this.refreshChat();
 
 
-            // Auto-attach currently active note when opening terminal
-            this.attachActiveNote();
+            // Auto-attach currently active note only when user interacts (clicks) on the terminal
+            this.containerEl.addEventListener('click', () => {
+                this.attachActiveNote();
+            });
 
-            // Removed 'active-leaf-change' listener to prevent auto-attaching while browsing
-            // Notes are now only attached on open or manually via the attach button.
+            // Remove global listener to prevent spamming context
+            // this.registerEvent(
+            //     this.app.workspace.on('active-leaf-change', () => {
+            //         this.attachActiveNote();
+            //     })
+            // );
         } catch (e: any) {
             new Notice(`Failed to initialize AI Terminal: ${e.message}`);
             console.error("AI Terminal Init Error:", e);
