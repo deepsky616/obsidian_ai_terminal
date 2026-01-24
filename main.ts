@@ -91,13 +91,11 @@ What this means for the reader.
 
 export const PROVIDER_MODELS = {
     gemini: [
-        { id: 'gemini-2.5-flash-preview-05-20', name: 'Gemini 2.5 Flash Preview' },
-        { id: 'gemini-2.5-pro-preview-05-06', name: 'Gemini 2.5 Pro Preview' },
+        { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro' },
+        { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash' },
+        { id: 'gemini-2.5-flash-lite', name: 'Gemini 2.5 Flash Lite' },
         { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash' },
         { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash Lite' },
-        { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash' },
-        { id: 'gemini-1.5-flash-8b', name: 'Gemini 1.5 Flash 8B' },
-        { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro' },
     ],
     openai: [
         { id: 'gpt-4.1', name: 'GPT-4.1' },
@@ -105,29 +103,27 @@ export const PROVIDER_MODELS = {
         { id: 'gpt-4.1-nano', name: 'GPT-4.1 Nano' },
         { id: 'gpt-4o', name: 'GPT-4o' },
         { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
+        { id: 'o3', name: 'o3' },
+        { id: 'o3-mini', name: 'o3 Mini' },
+        { id: 'o4-mini', name: 'o4 Mini' },
         { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
         { id: 'gpt-4', name: 'GPT-4' },
         { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
-        { id: 'o1', name: 'o1' },
-        { id: 'o1-mini', name: 'o1 Mini' },
-        { id: 'o1-pro', name: 'o1 Pro' },
-        { id: 'o3-mini', name: 'o3 Mini' },
     ],
     anthropic: [
+        { id: 'claude-sonnet-4-5-20250929', name: 'Claude Sonnet 4.5' },
+        { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5' },
+        { id: 'claude-opus-4-5-20251101', name: 'Claude Opus 4.5' },
         { id: 'claude-sonnet-4-20250514', name: 'Claude Sonnet 4' },
         { id: 'claude-3-7-sonnet-20250219', name: 'Claude 3.7 Sonnet' },
-        { id: 'claude-3-5-sonnet-20241022', name: 'Claude 3.5 Sonnet' },
-        { id: 'claude-3-5-haiku-20241022', name: 'Claude 3.5 Haiku' },
-        { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus' },
-        { id: 'claude-3-sonnet-20240229', name: 'Claude 3 Sonnet' },
         { id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku' },
     ]
 };
 
 const DEFAULT_CUSTOM_COMMANDS: CustomCommand[] = [
-    { id: '1', provider: 'gemini', modelId: 'gemini-2.0-flash', name: 'Gemini Flash', command: '/gemini', promptTemplate: PROMPT_TEMPLATES.basic },
+    { id: '1', provider: 'gemini', modelId: 'gemini-2.5-flash', name: 'Gemini Flash', command: '/gemini', promptTemplate: PROMPT_TEMPLATES.basic },
     { id: '2', provider: 'openai', modelId: 'gpt-4o-mini', name: 'GPT-4o Mini', command: '/gpt', promptTemplate: PROMPT_TEMPLATES.basic },
-    { id: '3', provider: 'anthropic', modelId: 'claude-3-5-haiku-20241022', name: 'Claude Haiku', command: '/claude', promptTemplate: PROMPT_TEMPLATES.basic },
+    { id: '3', provider: 'anthropic', modelId: 'claude-haiku-4-5-20251001', name: 'Claude Haiku', command: '/claude', promptTemplate: PROMPT_TEMPLATES.basic },
 ];
 
 const DEFAULT_SETTINGS: PluginSettings = {
