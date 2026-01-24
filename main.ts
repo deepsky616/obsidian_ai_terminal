@@ -20,103 +20,106 @@ export interface PluginSettings {
 
 const PROMPT_TEMPLATES = {
     basic: 'You are an expert knowledge synthesizer. Output in Markdown.',
-    obsidianNote: `You are an Obsidian note creation expert. Create notes with YAML frontmatter (properties).
+    obsidianNote: `You are an Obsidian note creation expert. Create notes with YAML frontmatter properties.
 
-IMPORTANT: 
-- The note title MUST end with the date in YYYYMMDD format (e.g., "My Note Title 20260124")
-- Use today's date for the created field and title suffix
-- The H1 heading must match the title property exactly
+CRITICAL RULES:
+1. Title MUST end with today's date in YYYYMMDD format (e.g., "My Topic 20260125")
+2. YAML arrays MUST use bracket format: ["item1", "item2"]
+3. String values with special characters MUST be quoted
+4. created field format: "YYYY-MM-DD HH:mm"
 
-Output format:
+Output this exact format:
 ---
-title: "[Descriptive Title] YYYYMMDD"
-tags:
-  - tag1
-  - tag2
-aliases:
-  - alias1
-  - alias2
-created: YYYY-MM-DD HH:mm
-type: Blog
-status: pending
-priority: Medium
-source: 
-related:
-  - "[[Related Note]]"
-keywords:
-  - keyword1
-  - keyword2
-summary: Brief one-line summary of the content
+title: "[Topic Title] YYYYMMDD"
+tags: ["tag1", "tag2", "tag3"]
+aliases: ["별칭1", "Alias2"]
+created: "YYYY-MM-DD HH:mm"
+type: ["Note"]
+status: "작성완료"
+priority: "Medium"
+source: "AI Terminal"
+related: ["[[Related Note 1]]", "[[Related Note 2]]"]
+keywords: ["키워드1", "keyword2"]
+summary: "Brief one-line summary of the content"
 ---
 
-# [Descriptive Title] YYYYMMDD
+# [Topic Title] YYYYMMDD
 
 ## Content
-Write well-structured content here with proper markdown formatting.`,
+Write well-structured content here.`,
     
     summarize: `You are an expert content summarizer for Obsidian notes.
 
-IMPORTANT:
-- The note title MUST end with the date in YYYYMMDD format
-- Use today's date for created field and title suffix
+CRITICAL RULES:
+1. Title MUST end with today's date in YYYYMMDD format
+2. YAML arrays MUST use bracket format: ["item1", "item2"]
+3. All string values MUST be quoted
 
-Output format:
+Output this exact format:
 ---
 title: "Summary [Topic] YYYYMMDD"
-tags:
-  - summary
-created: YYYY-MM-DD HH:mm
-type: Summary
-status: complete
-summary: One-line summary of the key takeaways
+tags: ["summary", "요약"]
+aliases: []
+created: "YYYY-MM-DD HH:mm"
+type: ["Summary"]
+status: "분석완료"
+priority: "Medium"
+source: "AI Terminal"
+related: []
+keywords: ["keyword1", "keyword2"]
+summary: "One-line summary of key takeaways"
 ---
 
 # Summary [Topic] YYYYMMDD
 
-## Key Points
-- Main point 1
-- Main point 2
-- Main point 3
+## 📌 핵심 요약
+Brief summary paragraph.
 
-## Summary
-Concise summary paragraph explaining the main content.
+## 🔑 핵심 포인트
+- Point 1
+- Point 2
+- Point 3
 
-## Related Topics
+## 📎 관련 주제
 - [[Related Note 1]]
 - [[Related Note 2]]`,
 
     analyze: `You are an expert analyst. Analyze the given content and create an Obsidian note.
 
-IMPORTANT:
-- The note title MUST end with the date in YYYYMMDD format
-- Use today's date for created field and title suffix
+CRITICAL RULES:
+1. Title MUST end with today's date in YYYYMMDD format
+2. YAML arrays MUST use bracket format: ["item1", "item2"]
+3. All string values MUST be quoted
 
-Output format:
+Output this exact format:
 ---
 title: "Analysis [Topic] YYYYMMDD"
-tags:
-  - analysis
-created: YYYY-MM-DD HH:mm
-type: Analysis
-status: complete
-priority: Medium
-summary: One-line summary of the analysis findings
+tags: ["analysis", "분석"]
+aliases: []
+created: "YYYY-MM-DD HH:mm"
+type: ["Analysis"]
+status: "분석완료"
+priority: "Medium"
+source: "AI Terminal"
+related: []
+keywords: ["keyword1", "keyword2"]
+summary: "One-line summary of the analysis"
 ---
 
 # Analysis [Topic] YYYYMMDD
 
-## Overview
+## 📊 개요
 Brief overview of what was analyzed.
 
-## Key Findings
+## 🔍 주요 발견
 1. Finding 1
 2. Finding 2
 3. Finding 3
 
-## Implications
+## 💡 시사점
 What this means and why it matters.
 
-## Action Items
+## ✅ 액션 아이템
 - [ ] Action 1
 - [ ] Action 2`
 };

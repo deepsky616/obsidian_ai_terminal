@@ -460,9 +460,57 @@ export class TerminalView extends ItemView {
     async createNoteFromResponse(content: string) {
         try {
             const defaultFolder = this.plugin.settings.defaultFolder || '';
-            const firstLine = content.split('\n')[0].substring(0, 50);
-            const timestamp = new Date().toISOString(); // ISO format for 'created'
-            const noteTitle = firstLine.replace(/["\\/]/g, '').trim() || `AI Response ${timestamp}`; // Clean title
+            const now = new Date();
+            const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+            const timeStr = now.toISOString().slice(0, 16).replace('T', ' ');
+            
+            let noteTitle = '';
+            let finalContent = content;
+            
+            // Check if content has YAML frontmatter with title
+            const yamlMatch = content.match(/^---\n([\s\S]*?)\n---/);
+            if (yamlMatch) {
+                const yamlContent = yamlMatch[1];
+                const titleMatch = yamlContent.match(/title:\s*"?([^"\n]+)"?/);
+                if (titleMatch) {
+                    noteTitle = titleMatch[1].trim();
+                }
+                finalContent = content;
+            } else {
+                // No YAML frontmatter - extract from first heading or first line
+                const headingMatch = content.match(/^#\s+(.+)$/m);
+                if (headingMatch) {
+                    noteTitle = headingMatch[1].trim();
+                } else {
+                    const firstLine = content.split('\n')[0].substring(0, 50);
+                    noteTitle = firstLine.replace(/[#"\\/]/g, '').trim();
+                }
+                
+                // Add YAML frontmatter if not present
+                finalContent = `---
+title: "${noteTitle} ${dateStr}"
+tags: []
+aliases: []
+created: "${timeStr}"
+type: ["Note"]
+status: "작성완료"
+priority: "Medium"
+source: "AI Terminal"
+related: []
+keywords: []
+summary: ""
+---
+
+${content}`;
+                noteTitle = `${noteTitle} ${dateStr}`;
+            }
+            
+            // Add date suffix if not already present
+            if (!noteTitle.match(/\d{8}$/)) {
+                noteTitle = `${noteTitle} ${dateStr}`;
+            }
+            
+            noteTitle = noteTitle || `AI Response ${dateStr}`;
             const sanitizedTitle = noteTitle.replace(/[\\/:*?"<>|]/g, '-');
             const folderPath = defaultFolder ? `${defaultFolder}/` : '';
             const fullPath = `${folderPath}${sanitizedTitle}.md`;
@@ -482,23 +530,7 @@ export class TerminalView extends ItemView {
                 counter++;
             }
 
-            // Construct File Content with Obsidian Properties
-            const fileContent = `---
-title: "${noteTitle}"
-tags: []
-aliases: []
-created: ${timestamp}
-type: 
-priority: 
-source: "AI Terminal"
-related: []
-keywords: []
-summary: 
----
-
-${content}`;
-
-            const file = await this.app.vault.create(finalPath, fileContent);
+            const file = await this.app.vault.create(finalPath, finalContent);
             new Notice(`Note created: ${file.basename}`);
             const leaf = this.app.workspace.getLeaf(false);
             await leaf.openFile(file);
