@@ -922,3 +922,78 @@
     background-color: var(--background-modifier-hover);
     color: var(--text-normal);
 }
+
+.command-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.command-delete-btn {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    font-size: 18px;
+    line-height: 1;
+    background-color: transparent;
+    border: none;
+    border-radius: 4px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.command-delete-btn:hover {
+    background-color: var(--background-modifier-error);
+    color: var(--text-on-accent);
+}
+
+.command-action-container {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+.command-action-btn {
+    padding: 8px 20px;
+    font-size: 13px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.command-action-btn.cancel-btn {
+    background-color: transparent;
+    border: 1px solid var(--background-modifier-border);
+    color: var(--text-muted);
+}
+
+.command-action-btn.cancel-btn:hover {
+    background-color: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+.command-action-btn.save-btn {
+    background-color: var(--interactive-accent);
+    border: 1px solid var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.command-action-btn.save-btn:hover {
+    opacity: 0.9;
+}
+
+.prompt-clear-btn {
+    color: var(--text-error);
+}
+
+.prompt-clear-btn:hover {
+    background-color: var(--background-modifier-error);
+    color: var(--text-on-accent);
+}

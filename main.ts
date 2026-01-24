@@ -254,11 +254,26 @@ class AITerminalSettingTab extends PluginSettingTab {
             commandInfo.createEl('span', { text: cmd.command, cls: 'command-slash' });
             commandInfo.createEl('span', { text: cmd.name, cls: 'command-name' });
             
-            const chevron = commandHeader.createEl('span', { cls: 'command-chevron', text: '›' });
+            const headerActions = commandHeader.createDiv({ cls: 'command-header-actions' });
+            const deleteBtn = headerActions.createEl('button', { 
+                cls: 'command-delete-btn',
+                attr: { 'aria-label': 'Delete command' }
+            });
+            deleteBtn.innerHTML = '×';
+            deleteBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                this.plugin.settings.customCommands.splice(index, 1);
+                await this.plugin.saveSettings();
+                this.display();
+            });
+            
+            const chevron = headerActions.createEl('span', { cls: 'command-chevron', text: '›' });
             
             const commandDetails = commandItem.createDiv({ cls: 'command-details hidden' });
             
-            commandHeader.addEventListener('click', () => {
+            commandHeader.addEventListener('click', (e) => {
+                if ((e.target as HTMLElement).closest('.command-delete-btn')) return;
+                
                 const isHidden = commandDetails.hasClass('hidden');
                 commandListContainer.querySelectorAll('.command-details').forEach(el => el.addClass('hidden'));
                 commandListContainer.querySelectorAll('.command-chevron').forEach(el => el.removeClass('expanded'));
@@ -355,8 +370,8 @@ class AITerminalSettingTab extends PluginSettingTab {
             const promptActionContainer = commandDetails.createDiv({ cls: 'prompt-action-container' });
             
             const clearBtn = promptActionContainer.createEl('button', { 
-                cls: 'prompt-action-btn',
-                text: 'Clear' 
+                cls: 'prompt-action-btn prompt-clear-btn',
+                text: 'Clear Prompt' 
             });
             clearBtn.addEventListener('click', async () => {
                 textArea.setValue('');
@@ -364,15 +379,26 @@ class AITerminalSettingTab extends PluginSettingTab {
                 await this.plugin.saveSettings();
             });
 
-            new Setting(commandDetails)
-                .addButton(button => button
-                    .setButtonText('Delete Command')
-                    .setWarning()
-                    .onClick(async () => {
-                        this.plugin.settings.customCommands.splice(index, 1);
-                        await this.plugin.saveSettings();
-                        this.display();
-                    }));
+            const commandActionContainer = commandDetails.createDiv({ cls: 'command-action-container' });
+            
+            const cancelBtn = commandActionContainer.createEl('button', { 
+                cls: 'command-action-btn cancel-btn',
+                text: 'Cancel' 
+            });
+            cancelBtn.addEventListener('click', () => {
+                commandDetails.addClass('hidden');
+                chevron.removeClass('expanded');
+            });
+
+            const saveBtn = commandActionContainer.createEl('button', { 
+                cls: 'command-action-btn save-btn',
+                text: 'Save' 
+            });
+            saveBtn.addEventListener('click', async () => {
+                await this.plugin.saveSettings();
+                commandDetails.addClass('hidden');
+                chevron.removeClass('expanded');
+            });
         });
 
         new Setting(containerEl)
