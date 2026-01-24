@@ -20,44 +20,66 @@ export interface PluginSettings {
 
 const PROMPT_TEMPLATES = {
     basic: 'You are an expert knowledge synthesizer. Output in Markdown.',
-    obsidianNote: `You are an Obsidian note creation expert. Create notes with YAML frontmatter.
+    obsidianNote: `You are an Obsidian note creation expert. Create notes with YAML frontmatter (properties).
+
+IMPORTANT: 
+- The note title MUST end with the date in YYYYMMDD format (e.g., "My Note Title 20260124")
+- Use today's date for the created field and title suffix
+- The H1 heading must match the title property exactly
 
 Output format:
 ---
-title: "Note Title"
-tags: ["tag1", "tag2"]
-aliases: ["alias1", "alias2"]
-created: "YYYY-MM-DD HH:mm"
-type: ["Blog", "News", "Research"]
-status: "pending"
-priority: "High/Medium/Low"
-source: "Source Name"
-related: []
-keywords: ["keyword1", "keyword2"]
-summary: "Brief summary of the content"
+title: "[Descriptive Title] YYYYMMDD"
+tags:
+  - tag1
+  - tag2
+aliases:
+  - alias1
+  - alias2
+created: YYYY-MM-DD HH:mm
+type: Blog
+status: pending
+priority: Medium
+source: 
+related:
+  - "[[Related Note]]"
+keywords:
+  - keyword1
+  - keyword2
+summary: Brief one-line summary of the content
 ---
 
-# Title
+# [Descriptive Title] YYYYMMDD
 
 ## Content
-Write well-structured content here.`,
+Write well-structured content here with proper markdown formatting.`,
     
     summarize: `You are an expert content summarizer for Obsidian notes.
 
-Create a structured summary with:
+IMPORTANT:
+- The note title MUST end with the date in YYYYMMDD format
+- Use today's date for created field and title suffix
+
+Output format:
 ---
-title: "Summary: [Topic]"
-tags: ["summary"]
-created: "YYYY-MM-DD HH:mm"
-type: ["Summary"]
+title: "Summary [Topic] YYYYMMDD"
+tags:
+  - summary
+created: YYYY-MM-DD HH:mm
+type: Summary
+status: complete
+summary: One-line summary of the key takeaways
 ---
+
+# Summary [Topic] YYYYMMDD
 
 ## Key Points
 - Main point 1
 - Main point 2
+- Main point 3
 
 ## Summary
-Concise summary paragraph.
+Concise summary paragraph explaining the main content.
 
 ## Related Topics
 - [[Related Note 1]]
@@ -65,14 +87,23 @@ Concise summary paragraph.
 
     analyze: `You are an expert analyst. Analyze the given content and create an Obsidian note.
 
+IMPORTANT:
+- The note title MUST end with the date in YYYYMMDD format
+- Use today's date for created field and title suffix
+
 Output format:
 ---
-title: "Analysis: [Topic]"
-tags: ["analysis"]
-created: "YYYY-MM-DD HH:mm"
-type: ["Analysis"]
-status: "complete"
+title: "Analysis [Topic] YYYYMMDD"
+tags:
+  - analysis
+created: YYYY-MM-DD HH:mm
+type: Analysis
+status: complete
+priority: Medium
+summary: One-line summary of the analysis findings
 ---
+
+# Analysis [Topic] YYYYMMDD
 
 ## Overview
 Brief overview of what was analyzed.
@@ -80,9 +111,10 @@ Brief overview of what was analyzed.
 ## Key Findings
 1. Finding 1
 2. Finding 2
+3. Finding 3
 
 ## Implications
-What this means for the reader.
+What this means and why it matters.
 
 ## Action Items
 - [ ] Action 1
