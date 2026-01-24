@@ -343,11 +343,7 @@ class AITerminalSettingTab extends PluginSettingTab {
                         commandInfo.querySelector('.command-slash')!.textContent = value;
                     }));
 
-            const modelSetting = new Setting(commandDetails)
-                .setName('Model')
-                .setDesc('Select the AI model to use');
-
-            let modelDropdown: any;
+            let modelDropdownEl: HTMLSelectElement;
 
             new Setting(commandDetails)
                 .setName('Provider')
@@ -361,22 +357,31 @@ class AITerminalSettingTab extends PluginSettingTab {
                         this.plugin.settings.customCommands[index].provider = value;
                         const models = PROVIDER_MODELS[value];
                         this.plugin.settings.customCommands[index].modelId = models[0].id;
+                        
+                        modelDropdownEl.empty();
+                        models.forEach(model => {
+                            const opt = modelDropdownEl.createEl('option', { value: model.id, text: model.name });
+                            if (model.id === models[0].id) opt.selected = true;
+                        });
+                        
                         await this.plugin.saveSettings();
-                        this.display();
                     }));
 
-            modelSetting.addDropdown(dropdown => {
-                modelDropdown = dropdown;
-                const models = PROVIDER_MODELS[cmd.provider];
-                models.forEach(model => {
-                    dropdown.addOption(model.id, model.name);
+            new Setting(commandDetails)
+                .setName('Model')
+                .setDesc('Select the AI model to use')
+                .addDropdown(dropdown => {
+                    modelDropdownEl = dropdown.selectEl;
+                    const models = PROVIDER_MODELS[cmd.provider];
+                    models.forEach(model => {
+                        dropdown.addOption(model.id, model.name);
+                    });
+                    dropdown.setValue(cmd.modelId);
+                    dropdown.onChange(async (value) => {
+                        this.plugin.settings.customCommands[index].modelId = value;
+                        await this.plugin.saveSettings();
+                    });
                 });
-                dropdown.setValue(cmd.modelId);
-                dropdown.onChange(async (value) => {
-                    this.plugin.settings.customCommands[index].modelId = value;
-                    await this.plugin.saveSettings();
-                });
-            });
 
             commandDetails.createEl('div', { cls: 'prompt-section-header', text: 'Prompt Template' });
             commandDetails.createEl('p', { 
