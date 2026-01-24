@@ -166,56 +166,60 @@ class AITerminalSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        // Custom Commands Section
         containerEl.createEl('h3', { text: 'Custom Commands' });
         containerEl.createEl('p', { 
-            text: 'Create custom slash commands with any model and prompt template. Use commands like /summarize or /translate in chat.',
+            text: 'Create custom slash commands with any model and prompt template.',
             cls: 'setting-item-description'
         });
 
+        const commandListContainer = containerEl.createDiv({ cls: 'command-list-container' });
         const commands = this.plugin.settings.customCommands;
         
         commands.forEach((cmd, index) => {
-            const cmdContainer = containerEl.createDiv({ cls: 'ai-terminal-model-config' });
+            const commandItem = commandListContainer.createDiv({ cls: 'command-list-item' });
             
-            const headerDiv = cmdContainer.createDiv({ cls: 'model-config-header' });
-            headerDiv.createEl('h4', { text: cmd.name || 'New Command', cls: 'model-config-title' });
+            const commandHeader = commandItem.createDiv({ cls: 'command-list-header' });
+            const commandInfo = commandHeader.createDiv({ cls: 'command-list-info' });
+            commandInfo.createEl('span', { text: cmd.command, cls: 'command-slash' });
+            commandInfo.createEl('span', { text: cmd.name, cls: 'command-name' });
             
-            const deleteBtn = headerDiv.createEl('button', { 
-                cls: 'mod-warning command-delete-btn',
-                text: 'Delete'
-            });
-            deleteBtn.addEventListener('click', async () => {
-                this.plugin.settings.customCommands.splice(index, 1);
-                await this.plugin.saveSettings();
-                this.display();
+            const chevron = commandHeader.createEl('span', { cls: 'command-chevron', text: '›' });
+            
+            const commandDetails = commandItem.createDiv({ cls: 'command-details hidden' });
+            
+            commandHeader.addEventListener('click', () => {
+                const isHidden = commandDetails.hasClass('hidden');
+                commandListContainer.querySelectorAll('.command-details').forEach(el => el.addClass('hidden'));
+                commandListContainer.querySelectorAll('.command-chevron').forEach(el => el.removeClass('expanded'));
+                
+                if (isHidden) {
+                    commandDetails.removeClass('hidden');
+                    chevron.addClass('expanded');
+                }
             });
 
-            new Setting(cmdContainer)
+            new Setting(commandDetails)
                 .setName('Name')
-                .setDesc('Display name for this command')
                 .addText(text => text
-                    .setPlaceholder('My Custom Command')
                     .setValue(cmd.name)
                     .onChange(async (value) => {
                         this.plugin.settings.customCommands[index].name = value;
                         await this.plugin.saveSettings();
+                        commandInfo.querySelector('.command-name')!.textContent = value;
                     }));
 
-            new Setting(cmdContainer)
+            new Setting(commandDetails)
                 .setName('Command')
-                .setDesc('Slash command to trigger (e.g., /summarize)')
                 .addText(text => text
-                    .setPlaceholder('/command')
                     .setValue(cmd.command)
                     .onChange(async (value) => {
                         this.plugin.settings.customCommands[index].command = value;
                         await this.plugin.saveSettings();
+                        commandInfo.querySelector('.command-slash')!.textContent = value;
                     }));
 
-            new Setting(cmdContainer)
+            new Setting(commandDetails)
                 .setName('Provider')
-                .setDesc('AI provider to use')
                 .addDropdown(dropdown => dropdown
                     .addOption('gemini', 'Google Gemini')
                     .addOption('openai', 'OpenAI')
@@ -226,37 +230,38 @@ class AITerminalSettingTab extends PluginSettingTab {
                         await this.plugin.saveSettings();
                     }));
 
-            new Setting(cmdContainer)
+            new Setting(commandDetails)
                 .setName('Model ID')
-                .setDesc('The API model identifier (e.g., gpt-4o-mini, gemini-2.0-flash-exp)')
                 .addText(text => text
-                    .setPlaceholder('model-id')
                     .setValue(cmd.modelId)
                     .onChange(async (value) => {
                         this.plugin.settings.customCommands[index].modelId = value;
                         await this.plugin.saveSettings();
                     }));
 
-            new Setting(cmdContainer)
-                .setName('Prompt Template')
-                .setDesc('System prompt for this command');
-            
-            const textAreaContainer = cmdContainer.createDiv({ cls: 'prompt-template-container' });
+            const promptSetting = new Setting(commandDetails).setName('Prompt Template');
+            const textAreaContainer = commandDetails.createDiv({ cls: 'prompt-template-container' });
             const textArea = new TextAreaComponent(textAreaContainer);
-            textArea
-                .setPlaceholder('Enter system prompt template...')
-                .setValue(cmd.promptTemplate);
+            textArea.setValue(cmd.promptTemplate);
             textArea.inputEl.rows = 4;
             textArea.inputEl.style.width = '100%';
             textArea.onChange(async (value) => {
                 this.plugin.settings.customCommands[index].promptTemplate = value;
                 await this.plugin.saveSettings();
             });
+
+            new Setting(commandDetails)
+                .addButton(button => button
+                    .setButtonText('Delete Command')
+                    .setWarning()
+                    .onClick(async () => {
+                        this.plugin.settings.customCommands.splice(index, 1);
+                        await this.plugin.saveSettings();
+                        this.display();
+                    }));
         });
 
         new Setting(containerEl)
-            .setName('Add New Command')
-            .setDesc('Create a new custom command')
             .addButton(button => button
                 .setButtonText('+ Add Command')
                 .setCta()
