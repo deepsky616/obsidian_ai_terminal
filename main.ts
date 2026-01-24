@@ -1,8 +1,10 @@
 import { App, Plugin, PluginSettingTab, Setting, WorkspaceLeaf, TextAreaComponent } from 'obsidian';
 import { TerminalView, TERMINAL_VIEW_TYPE } from './src/TerminalView';
 
-export interface ModelConfig {
+export interface CustomCommand {
     id: string;
+    provider: 'gemini' | 'openai' | 'anthropic';
+    modelId: string;
     name: string;
     command: string;
     promptTemplate: string;
@@ -13,34 +15,21 @@ export interface PluginSettings {
     openaiApiKey: string;
     anthropicApiKey: string;
     defaultFolder: string;
-    modelConfigs: {
-        gemini: ModelConfig[];
-        openai: ModelConfig[];
-        anthropic: ModelConfig[];
-    };
+    customCommands: CustomCommand[];
 }
 
-const DEFAULT_MODEL_CONFIGS = {
-    gemini: [
-        { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash', command: '/gemini-flash', promptTemplate: 'You are an expert knowledge synthesizer. Output in Markdown.' },
-        { id: 'gemini-2.5-flash-exp', name: 'Gemini 2.5 Flash', command: '/gemini-flash-25', promptTemplate: 'You are an expert knowledge synthesizer. Output in Markdown.' }
-    ],
-    openai: [
-        { id: 'gpt-4o-mini', name: 'GPT-4o Mini', command: '/gpt-mini', promptTemplate: 'You are an expert knowledge synthesizer. Output in Markdown.' },
-        { id: 'gpt-5-mini', name: 'GPT-5 Mini', command: '/gpt5-mini', promptTemplate: 'You are an expert knowledge synthesizer. Output in Markdown.' }
-    ],
-    anthropic: [
-        { id: 'claude-3-5-haiku-latest', name: 'Claude 3.5 Haiku', command: '/claude-haiku', promptTemplate: 'You are an expert knowledge synthesizer. Output in Markdown.' },
-        { id: 'claude-4-5-haiku-latest', name: 'Claude 4.5 Haiku', command: '/claude-haiku-45', promptTemplate: 'You are an expert knowledge synthesizer. Output in Markdown.' }
-    ]
-};
+const DEFAULT_CUSTOM_COMMANDS: CustomCommand[] = [
+    { id: '1', provider: 'gemini', modelId: 'gemini-2.0-flash-exp', name: 'Gemini Flash', command: '/gemini', promptTemplate: 'You are an expert knowledge synthesizer. Output in Markdown.' },
+    { id: '2', provider: 'openai', modelId: 'gpt-4o-mini', name: 'GPT-4o Mini', command: '/gpt', promptTemplate: 'You are an expert knowledge synthesizer. Output in Markdown.' },
+    { id: '3', provider: 'anthropic', modelId: 'claude-3-5-haiku-latest', name: 'Claude Haiku', command: '/claude', promptTemplate: 'You are an expert knowledge synthesizer. Output in Markdown.' },
+];
 
 const DEFAULT_SETTINGS: PluginSettings = {
     googleApiKey: '',
     openaiApiKey: '',
     anthropicApiKey: '',
     defaultFolder: '',
-    modelConfigs: DEFAULT_MODEL_CONFIGS
+    customCommands: DEFAULT_CUSTOM_COMMANDS
 }
 
 export default class AITerminalPlugin extends Plugin {
@@ -177,89 +166,112 @@ class AITerminalSettingTab extends PluginSettingTab {
                     await this.plugin.saveSettings();
                 }));
 
-        // Model Configurations Section
-        this.renderModelConfigSection(containerEl, 'Gemini Models', 'gemini');
-        this.renderModelConfigSection(containerEl, 'OpenAI Models', 'openai');
-        this.renderModelConfigSection(containerEl, 'Anthropic Models', 'anthropic');
-    }
+        // Custom Commands Section
+        containerEl.createEl('h3', { text: 'Custom Commands' });
+        containerEl.createEl('p', { 
+            text: 'Create custom slash commands with any model and prompt template. Use commands like /summarize or /translate in chat.',
+            cls: 'setting-item-description'
+        });
 
-    renderModelConfigSection(containerEl: HTMLElement, title: string, provider: 'gemini' | 'openai' | 'anthropic') {
-        containerEl.createEl('h3', { text: title });
+        const commands = this.plugin.settings.customCommands;
         
-        const models = this.plugin.settings.modelConfigs[provider];
-        
-        models.forEach((model, index) => {
-            const modelContainer = containerEl.createDiv({ cls: 'ai-terminal-model-config' });
-            modelContainer.createEl('h4', { text: model.name, cls: 'model-config-title' });
+        commands.forEach((cmd, index) => {
+            const cmdContainer = containerEl.createDiv({ cls: 'ai-terminal-model-config' });
+            
+            const headerDiv = cmdContainer.createDiv({ cls: 'model-config-header' });
+            headerDiv.createEl('h4', { text: cmd.name || 'New Command', cls: 'model-config-title' });
+            
+            const deleteBtn = headerDiv.createEl('button', { 
+                cls: 'mod-warning command-delete-btn',
+                text: 'Delete'
+            });
+            deleteBtn.addEventListener('click', async () => {
+                this.plugin.settings.customCommands.splice(index, 1);
+                await this.plugin.saveSettings();
+                this.display();
+            });
 
-            // Model ID (read-only display)
-            new Setting(modelContainer)
-                .setName('Model ID')
-                .setDesc('The API model identifier')
+            new Setting(cmdContainer)
+                .setName('Name')
+                .setDesc('Display name for this command')
                 .addText(text => text
-                    .setValue(model.id)
+                    .setPlaceholder('My Custom Command')
+                    .setValue(cmd.name)
                     .onChange(async (value) => {
-                        this.plugin.settings.modelConfigs[provider][index].id = value;
+                        this.plugin.settings.customCommands[index].name = value;
                         await this.plugin.saveSettings();
                     }));
 
-            // Display Name
-            new Setting(modelContainer)
-                .setName('Display Name')
-                .setDesc('The name shown in the model selector')
-                .addText(text => text
-                    .setValue(model.name)
-                    .onChange(async (value) => {
-                        this.plugin.settings.modelConfigs[provider][index].name = value;
-                        await this.plugin.saveSettings();
-                    }));
-
-            // Command
-            new Setting(modelContainer)
+            new Setting(cmdContainer)
                 .setName('Command')
-                .setDesc('Slash command to quickly select this model (e.g., /summarize)')
+                .setDesc('Slash command to trigger (e.g., /summarize)')
                 .addText(text => text
                     .setPlaceholder('/command')
-                    .setValue(model.command)
+                    .setValue(cmd.command)
                     .onChange(async (value) => {
-                        this.plugin.settings.modelConfigs[provider][index].command = value;
+                        this.plugin.settings.customCommands[index].command = value;
                         await this.plugin.saveSettings();
                     }));
 
-            // Prompt Template
-            new Setting(modelContainer)
+            new Setting(cmdContainer)
+                .setName('Provider')
+                .setDesc('AI provider to use')
+                .addDropdown(dropdown => dropdown
+                    .addOption('gemini', 'Google Gemini')
+                    .addOption('openai', 'OpenAI')
+                    .addOption('anthropic', 'Anthropic')
+                    .setValue(cmd.provider)
+                    .onChange(async (value: 'gemini' | 'openai' | 'anthropic') => {
+                        this.plugin.settings.customCommands[index].provider = value;
+                        await this.plugin.saveSettings();
+                    }));
+
+            new Setting(cmdContainer)
+                .setName('Model ID')
+                .setDesc('The API model identifier (e.g., gpt-4o-mini, gemini-2.0-flash-exp)')
+                .addText(text => text
+                    .setPlaceholder('model-id')
+                    .setValue(cmd.modelId)
+                    .onChange(async (value) => {
+                        this.plugin.settings.customCommands[index].modelId = value;
+                        await this.plugin.saveSettings();
+                    }));
+
+            new Setting(cmdContainer)
                 .setName('Prompt Template')
-                .setDesc('System prompt template for this model');
+                .setDesc('System prompt for this command');
             
-            const textAreaContainer = modelContainer.createDiv({ cls: 'prompt-template-container' });
+            const textAreaContainer = cmdContainer.createDiv({ cls: 'prompt-template-container' });
             const textArea = new TextAreaComponent(textAreaContainer);
             textArea
                 .setPlaceholder('Enter system prompt template...')
-                .setValue(model.promptTemplate);
+                .setValue(cmd.promptTemplate);
             textArea.inputEl.rows = 4;
             textArea.inputEl.style.width = '100%';
             textArea.onChange(async (value) => {
-                this.plugin.settings.modelConfigs[provider][index].promptTemplate = value;
+                this.plugin.settings.customCommands[index].promptTemplate = value;
                 await this.plugin.saveSettings();
             });
         });
 
-        // Add New Model Button
         new Setting(containerEl)
-            .setName('Add New Model')
-            .setDesc(`Add a new ${provider} model configuration`)
+            .setName('Add New Command')
+            .setDesc('Create a new custom command')
             .addButton(button => button
-                .setButtonText('+ Add Model')
+                .setButtonText('+ Add Command')
+                .setCta()
                 .onClick(async () => {
-                    const newModel: ModelConfig = {
-                        id: `new-${provider}-model`,
-                        name: `New ${provider.charAt(0).toUpperCase() + provider.slice(1)} Model`,
-                        command: `/new-${provider}`,
+                    const newCommand: CustomCommand = {
+                        id: Date.now().toString(),
+                        provider: 'gemini',
+                        modelId: 'gemini-2.0-flash-exp',
+                        name: 'New Command',
+                        command: '/new',
                         promptTemplate: 'You are an expert knowledge synthesizer. Output in Markdown.'
                     };
-                    this.plugin.settings.modelConfigs[provider].push(newModel);
+                    this.plugin.settings.customCommands.push(newCommand);
                     await this.plugin.saveSettings();
-                    this.display(); // Refresh settings UI
+                    this.display();
                 }));
     }
 }

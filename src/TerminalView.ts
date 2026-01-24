@@ -1,5 +1,5 @@
 import { ItemView, WorkspaceLeaf, Notice, TFile, TFolder, ButtonComponent, Menu } from "obsidian";
-import AITerminalPlugin, { ModelConfig } from "../main";
+import AITerminalPlugin, { CustomCommand } from "../main";
 import { AIService } from "./AIService";
 import { NoteSuggester, MultiNoteSuggester, FolderSuggester } from "./NoteSuggester";
 
@@ -262,8 +262,22 @@ export class TerminalView extends ItemView {
         }, 50);
     }
 
-    getProviderModels(): ModelConfig[] {
-        return this.plugin.settings.modelConfigs[this.currentProvider];
+    getProviderModels(): {id: string, name: string}[] {
+        const defaultModels = {
+            gemini: [
+                { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash' },
+                { id: 'gemini-2.5-flash-exp', name: 'Gemini 2.5 Flash' }
+            ],
+            openai: [
+                { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
+                { id: 'gpt-4o', name: 'GPT-4o' }
+            ],
+            anthropic: [
+                { id: 'claude-3-5-haiku-latest', name: 'Claude 3.5 Haiku' },
+                { id: 'claude-3-5-sonnet-latest', name: 'Claude 3.5 Sonnet' }
+            ]
+        };
+        return defaultModels[this.currentProvider];
     }
 
     updateModelSelector() {
@@ -508,9 +522,14 @@ ${content}`;
         }
     }
 
-    getCurrentModelConfig(): ModelConfig | undefined {
-        const models = this.getProviderModels();
-        return models.find(m => m.id === this.currentModel);
+    findCommandBySlash(input: string): CustomCommand | undefined {
+        const commands = this.plugin.settings.customCommands;
+        for (const cmd of commands) {
+            if (input.startsWith(cmd.command + ' ') || input === cmd.command) {
+                return cmd;
+            }
+        }
+        return undefined;
     }
 
     async processCommand(input: string) {
@@ -520,9 +539,22 @@ ${content}`;
             contextText += `\n=== NOTE: ${file.basename} ===\n${content.substring(0, 10000)}...\n`;
         }
 
-        const modelConfig = this.getCurrentModelConfig();
-        const systemPrompt = modelConfig?.promptTemplate || "You are an expert knowledge synthesizer. Output in Markdown.";
-        const fullPrompt = `Context:\n${contextText}\n\nInstruction:\n${input}`;
+        const customCommand = this.findCommandBySlash(input);
+        
+        let provider = this.currentProvider;
+        let modelId = this.currentModel;
+        let systemPrompt = "You are an expert knowledge synthesizer. Output in Markdown.";
+        let userMessage = input;
+
+        if (customCommand) {
+            provider = customCommand.provider;
+            modelId = customCommand.modelId;
+            systemPrompt = customCommand.promptTemplate;
+            userMessage = input.slice(customCommand.command.length).trim() || input;
+            new Notice(`Using: ${customCommand.name}`);
+        }
+
+        const fullPrompt = `Context:\n${contextText}\n\nInstruction:\n${userMessage}`;
 
         this.chatHistory.push({ role: 'system', content: "Generating..." });
         this.refreshChat();
@@ -531,12 +563,12 @@ ${content}`;
             let response = "";
             const { settings } = this.plugin;
 
-            if (this.currentProvider === 'gemini') {
-                response = await AIService.callGoogle(settings.googleApiKey, this.currentModel, systemPrompt, fullPrompt);
-            } else if (this.currentProvider === 'openai') {
-                response = await AIService.callOpenAI(settings.openaiApiKey, this.currentModel, systemPrompt, fullPrompt);
-            } else if (this.currentProvider === 'anthropic') {
-                response = await AIService.callAnthropic(settings.anthropicApiKey, this.currentModel, systemPrompt, fullPrompt);
+            if (provider === 'gemini') {
+                response = await AIService.callGoogle(settings.googleApiKey, modelId, systemPrompt, fullPrompt);
+            } else if (provider === 'openai') {
+                response = await AIService.callOpenAI(settings.openaiApiKey, modelId, systemPrompt, fullPrompt);
+            } else if (provider === 'anthropic') {
+                response = await AIService.callAnthropic(settings.anthropicApiKey, modelId, systemPrompt, fullPrompt);
             }
 
             this.chatHistory.pop();

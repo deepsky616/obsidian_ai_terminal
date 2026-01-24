@@ -769,13 +769,25 @@
     border-radius: 8px;
 }
 
+.ai-terminal-model-config .model-config-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
 .ai-terminal-model-config .model-config-title {
-    margin: 0 0 12px 0;
+    margin: 0;
     font-size: 14px;
     font-weight: 600;
     color: var(--text-normal);
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.ai-terminal-model-config .command-delete-btn {
+    padding: 4px 12px;
+    font-size: 12px;
 }
 
 .prompt-template-container {
