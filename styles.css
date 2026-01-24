@@ -861,3 +861,64 @@
     border-color: var(--interactive-accent);
     box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2);
 }
+
+.prompt-section-header {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-normal);
+    margin-top: 16px;
+    margin-bottom: 4px;
+}
+
+.prompt-section-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin: 0 0 12px 0;
+}
+
+.template-btn-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.template-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.template-btn:hover {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border-color: var(--interactive-accent);
+}
+
+.prompt-action-container {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    margin-bottom: 12px;
+}
+
+.prompt-action-btn {
+    padding: 4px 12px;
+    font-size: 12px;
+    background-color: transparent;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.prompt-action-btn:hover {
+    background-color: var(--background-modifier-hover);
+    color: var(--text-normal);
+}

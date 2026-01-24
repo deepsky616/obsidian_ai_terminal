@@ -18,10 +18,81 @@ export interface PluginSettings {
     customCommands: CustomCommand[];
 }
 
+const PROMPT_TEMPLATES = {
+    basic: 'You are an expert knowledge synthesizer. Output in Markdown.',
+    obsidianNote: `You are an Obsidian note creation expert. Create notes with YAML frontmatter.
+
+Output format:
+---
+title: "Note Title"
+tags: ["tag1", "tag2"]
+aliases: ["alias1", "alias2"]
+created: "YYYY-MM-DD HH:mm"
+type: ["Blog", "News", "Research"]
+status: "pending"
+priority: "High/Medium/Low"
+source: "Source Name"
+related: []
+keywords: ["keyword1", "keyword2"]
+summary: "Brief summary of the content"
+---
+
+# Title
+
+## Content
+Write well-structured content here.`,
+    
+    summarize: `You are an expert content summarizer for Obsidian notes.
+
+Create a structured summary with:
+---
+title: "Summary: [Topic]"
+tags: ["summary"]
+created: "YYYY-MM-DD HH:mm"
+type: ["Summary"]
+---
+
+## Key Points
+- Main point 1
+- Main point 2
+
+## Summary
+Concise summary paragraph.
+
+## Related Topics
+- [[Related Note 1]]
+- [[Related Note 2]]`,
+
+    analyze: `You are an expert analyst. Analyze the given content and create an Obsidian note.
+
+Output format:
+---
+title: "Analysis: [Topic]"
+tags: ["analysis"]
+created: "YYYY-MM-DD HH:mm"
+type: ["Analysis"]
+status: "complete"
+---
+
+## Overview
+Brief overview of what was analyzed.
+
+## Key Findings
+1. Finding 1
+2. Finding 2
+
+## Implications
+What this means for the reader.
+
+## Action Items
+- [ ] Action 1
+- [ ] Action 2`
+};
+
 const DEFAULT_CUSTOM_COMMANDS: CustomCommand[] = [
-    { id: '1', provider: 'gemini', modelId: 'gemini-2.0-flash-exp', name: 'Gemini Flash', command: '/gemini', promptTemplate: 'You are an expert knowledge synthesizer. Output in Markdown.' },
-    { id: '2', provider: 'openai', modelId: 'gpt-4o-mini', name: 'GPT-4o Mini', command: '/gpt', promptTemplate: 'You are an expert knowledge synthesizer. Output in Markdown.' },
-    { id: '3', provider: 'anthropic', modelId: 'claude-3-5-haiku-latest', name: 'Claude Haiku', command: '/claude', promptTemplate: 'You are an expert knowledge synthesizer. Output in Markdown.' },
+    { id: '1', provider: 'gemini', modelId: 'gemini-2.0-flash-exp', name: 'Gemini Flash', command: '/gemini', promptTemplate: PROMPT_TEMPLATES.basic },
+    { id: '2', provider: 'openai', modelId: 'gpt-4o-mini', name: 'GPT-4o Mini', command: '/gpt', promptTemplate: PROMPT_TEMPLATES.basic },
+    { id: '3', provider: 'anthropic', modelId: 'claude-3-5-haiku-latest', name: 'Claude Haiku', command: '/claude', promptTemplate: PROMPT_TEMPLATES.basic },
 ];
 
 const DEFAULT_SETTINGS: PluginSettings = {
@@ -200,7 +271,9 @@ class AITerminalSettingTab extends PluginSettingTab {
 
             new Setting(commandDetails)
                 .setName('Name')
+                .setDesc('Display name shown in the command list')
                 .addText(text => text
+                    .setPlaceholder('e.g., Note Summarizer')
                     .setValue(cmd.name)
                     .onChange(async (value) => {
                         this.plugin.settings.customCommands[index].name = value;
@@ -210,7 +283,9 @@ class AITerminalSettingTab extends PluginSettingTab {
 
             new Setting(commandDetails)
                 .setName('Command')
+                .setDesc('Slash command to trigger (type this in chat to activate)')
                 .addText(text => text
+                    .setPlaceholder('e.g., /summarize')
                     .setValue(cmd.command)
                     .onChange(async (value) => {
                         this.plugin.settings.customCommands[index].command = value;
@@ -220,6 +295,7 @@ class AITerminalSettingTab extends PluginSettingTab {
 
             new Setting(commandDetails)
                 .setName('Provider')
+                .setDesc('AI provider to use for this command')
                 .addDropdown(dropdown => dropdown
                     .addOption('gemini', 'Google Gemini')
                     .addOption('openai', 'OpenAI')
@@ -232,21 +308,59 @@ class AITerminalSettingTab extends PluginSettingTab {
 
             new Setting(commandDetails)
                 .setName('Model ID')
+                .setDesc('API model identifier (e.g., gpt-4o-mini, gemini-2.0-flash-exp, claude-3-5-haiku-latest)')
                 .addText(text => text
+                    .setPlaceholder('e.g., gpt-4o-mini')
                     .setValue(cmd.modelId)
                     .onChange(async (value) => {
                         this.plugin.settings.customCommands[index].modelId = value;
                         await this.plugin.saveSettings();
                     }));
 
-            const promptSetting = new Setting(commandDetails).setName('Prompt Template');
+            commandDetails.createEl('div', { cls: 'prompt-section-header', text: 'Prompt Template' });
+            commandDetails.createEl('p', { 
+                cls: 'prompt-section-desc',
+                text: 'System prompt that defines AI behavior. Use templates below for Obsidian-optimized outputs.'
+            });
+
+            const templateBtnContainer = commandDetails.createDiv({ cls: 'template-btn-container' });
+            
             const textAreaContainer = commandDetails.createDiv({ cls: 'prompt-template-container' });
             const textArea = new TextAreaComponent(textAreaContainer);
             textArea.setValue(cmd.promptTemplate);
-            textArea.inputEl.rows = 4;
+            textArea.inputEl.rows = 8;
             textArea.inputEl.style.width = '100%';
             textArea.onChange(async (value) => {
                 this.plugin.settings.customCommands[index].promptTemplate = value;
+                await this.plugin.saveSettings();
+            });
+
+            const createTemplateBtn = (label: string, template: string) => {
+                const btn = templateBtnContainer.createEl('button', { 
+                    cls: 'template-btn',
+                    text: label 
+                });
+                btn.addEventListener('click', async () => {
+                    textArea.setValue(template);
+                    this.plugin.settings.customCommands[index].promptTemplate = template;
+                    await this.plugin.saveSettings();
+                });
+            };
+
+            createTemplateBtn('Basic', PROMPT_TEMPLATES.basic);
+            createTemplateBtn('Obsidian Note', PROMPT_TEMPLATES.obsidianNote);
+            createTemplateBtn('Summarize', PROMPT_TEMPLATES.summarize);
+            createTemplateBtn('Analyze', PROMPT_TEMPLATES.analyze);
+
+            const promptActionContainer = commandDetails.createDiv({ cls: 'prompt-action-container' });
+            
+            const clearBtn = promptActionContainer.createEl('button', { 
+                cls: 'prompt-action-btn',
+                text: 'Clear' 
+            });
+            clearBtn.addEventListener('click', async () => {
+                textArea.setValue('');
+                this.plugin.settings.customCommands[index].promptTemplate = '';
                 await this.plugin.saveSettings();
             });
 
