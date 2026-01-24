@@ -1,5 +1,5 @@
 import { ItemView, WorkspaceLeaf, Notice, TFile, TFolder, ButtonComponent, Menu } from "obsidian";
-import AITerminalPlugin, { CustomCommand } from "../main";
+import AITerminalPlugin, { CustomCommand, PROVIDER_MODELS } from "../main";
 import { AIService } from "./AIService";
 import { NoteSuggester, MultiNoteSuggester, FolderSuggester } from "./NoteSuggester";
 
@@ -263,21 +263,7 @@ export class TerminalView extends ItemView {
     }
 
     getProviderModels(): {id: string, name: string}[] {
-        const defaultModels = {
-            gemini: [
-                { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash' },
-                { id: 'gemini-2.5-flash-exp', name: 'Gemini 2.5 Flash' }
-            ],
-            openai: [
-                { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
-                { id: 'gpt-4o', name: 'GPT-4o' }
-            ],
-            anthropic: [
-                { id: 'claude-3-5-haiku-latest', name: 'Claude 3.5 Haiku' },
-                { id: 'claude-3-5-sonnet-latest', name: 'Claude 3.5 Sonnet' }
-            ]
-        };
-        return defaultModels[this.currentProvider];
+        return PROVIDER_MODELS[this.currentProvider];
     }
 
     updateModelSelector() {
