@@ -759,3 +759,45 @@
 .file-preview::-webkit-scrollbar-thumb:hover {
     background: var(--text-faint);
 }
+
+/* Settings - Model Configuration */
+.ai-terminal-model-config {
+    margin: 16px 0;
+    padding: 16px;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+}
+
+.ai-terminal-model-config .model-config-title {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-normal);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.prompt-template-container {
+    margin-top: 8px;
+}
+
+.prompt-template-container textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 10px;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    color: var(--text-normal);
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+.prompt-template-container textarea:focus {
+    outline: none;
+    border-color: var(--interactive-accent);
+    box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2);
+}

@@ -1,18 +1,46 @@
-import { App, Plugin, PluginSettingTab, Setting, WorkspaceLeaf } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Setting, WorkspaceLeaf, TextAreaComponent } from 'obsidian';
 import { TerminalView, TERMINAL_VIEW_TYPE } from './src/TerminalView';
 
-interface PluginSettings {
+export interface ModelConfig {
+    id: string;
+    name: string;
+    command: string;
+    promptTemplate: string;
+}
+
+export interface PluginSettings {
     googleApiKey: string;
     openaiApiKey: string;
     anthropicApiKey: string;
     defaultFolder: string;
+    modelConfigs: {
+        gemini: ModelConfig[];
+        openai: ModelConfig[];
+        anthropic: ModelConfig[];
+    };
 }
+
+const DEFAULT_MODEL_CONFIGS = {
+    gemini: [
+        { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash', command: '/gemini-flash', promptTemplate: 'You are an expert knowledge synthesizer. Output in Markdown.' },
+        { id: 'gemini-2.5-flash-exp', name: 'Gemini 2.5 Flash', command: '/gemini-flash-25', promptTemplate: 'You are an expert knowledge synthesizer. Output in Markdown.' }
+    ],
+    openai: [
+        { id: 'gpt-4o-mini', name: 'GPT-4o Mini', command: '/gpt-mini', promptTemplate: 'You are an expert knowledge synthesizer. Output in Markdown.' },
+        { id: 'gpt-5-mini', name: 'GPT-5 Mini', command: '/gpt5-mini', promptTemplate: 'You are an expert knowledge synthesizer. Output in Markdown.' }
+    ],
+    anthropic: [
+        { id: 'claude-3-5-haiku-latest', name: 'Claude 3.5 Haiku', command: '/claude-haiku', promptTemplate: 'You are an expert knowledge synthesizer. Output in Markdown.' },
+        { id: 'claude-4-5-haiku-latest', name: 'Claude 4.5 Haiku', command: '/claude-haiku-45', promptTemplate: 'You are an expert knowledge synthesizer. Output in Markdown.' }
+    ]
+};
 
 const DEFAULT_SETTINGS: PluginSettings = {
     googleApiKey: '',
     openaiApiKey: '',
     anthropicApiKey: '',
-    defaultFolder: ''
+    defaultFolder: '',
+    modelConfigs: DEFAULT_MODEL_CONFIGS
 }
 
 export default class AITerminalPlugin extends Plugin {
@@ -147,6 +175,91 @@ class AITerminalSettingTab extends PluginSettingTab {
                 .onChange(async (value) => {
                     this.plugin.settings.defaultFolder = value;
                     await this.plugin.saveSettings();
+                }));
+
+        // Model Configurations Section
+        this.renderModelConfigSection(containerEl, 'Gemini Models', 'gemini');
+        this.renderModelConfigSection(containerEl, 'OpenAI Models', 'openai');
+        this.renderModelConfigSection(containerEl, 'Anthropic Models', 'anthropic');
+    }
+
+    renderModelConfigSection(containerEl: HTMLElement, title: string, provider: 'gemini' | 'openai' | 'anthropic') {
+        containerEl.createEl('h3', { text: title });
+        
+        const models = this.plugin.settings.modelConfigs[provider];
+        
+        models.forEach((model, index) => {
+            const modelContainer = containerEl.createDiv({ cls: 'ai-terminal-model-config' });
+            modelContainer.createEl('h4', { text: model.name, cls: 'model-config-title' });
+
+            // Model ID (read-only display)
+            new Setting(modelContainer)
+                .setName('Model ID')
+                .setDesc('The API model identifier')
+                .addText(text => text
+                    .setValue(model.id)
+                    .onChange(async (value) => {
+                        this.plugin.settings.modelConfigs[provider][index].id = value;
+                        await this.plugin.saveSettings();
+                    }));
+
+            // Display Name
+            new Setting(modelContainer)
+                .setName('Display Name')
+                .setDesc('The name shown in the model selector')
+                .addText(text => text
+                    .setValue(model.name)
+                    .onChange(async (value) => {
+                        this.plugin.settings.modelConfigs[provider][index].name = value;
+                        await this.plugin.saveSettings();
+                    }));
+
+            // Command
+            new Setting(modelContainer)
+                .setName('Command')
+                .setDesc('Slash command to quickly select this model (e.g., /summarize)')
+                .addText(text => text
+                    .setPlaceholder('/command')
+                    .setValue(model.command)
+                    .onChange(async (value) => {
+                        this.plugin.settings.modelConfigs[provider][index].command = value;
+                        await this.plugin.saveSettings();
+                    }));
+
+            // Prompt Template
+            new Setting(modelContainer)
+                .setName('Prompt Template')
+                .setDesc('System prompt template for this model');
+            
+            const textAreaContainer = modelContainer.createDiv({ cls: 'prompt-template-container' });
+            const textArea = new TextAreaComponent(textAreaContainer);
+            textArea
+                .setPlaceholder('Enter system prompt template...')
+                .setValue(model.promptTemplate);
+            textArea.inputEl.rows = 4;
+            textArea.inputEl.style.width = '100%';
+            textArea.onChange(async (value) => {
+                this.plugin.settings.modelConfigs[provider][index].promptTemplate = value;
+                await this.plugin.saveSettings();
+            });
+        });
+
+        // Add New Model Button
+        new Setting(containerEl)
+            .setName('Add New Model')
+            .setDesc(`Add a new ${provider} model configuration`)
+            .addButton(button => button
+                .setButtonText('+ Add Model')
+                .onClick(async () => {
+                    const newModel: ModelConfig = {
+                        id: `new-${provider}-model`,
+                        name: `New ${provider.charAt(0).toUpperCase() + provider.slice(1)} Model`,
+                        command: `/new-${provider}`,
+                        promptTemplate: 'You are an expert knowledge synthesizer. Output in Markdown.'
+                    };
+                    this.plugin.settings.modelConfigs[provider].push(newModel);
+                    await this.plugin.saveSettings();
+                    this.display(); // Refresh settings UI
                 }));
     }
 }

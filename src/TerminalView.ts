@@ -1,24 +1,9 @@
 import { ItemView, WorkspaceLeaf, Notice, TFile, TFolder, ButtonComponent, Menu } from "obsidian";
-import AITerminalPlugin from "../main";
+import AITerminalPlugin, { ModelConfig } from "../main";
 import { AIService } from "./AIService";
 import { NoteSuggester, MultiNoteSuggester, FolderSuggester } from "./NoteSuggester";
 
 export const TERMINAL_VIEW_TYPE = "ai-terminal-view";
-
-const PROVIDER_MODELS = {
-    'gemini': [
-        { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash' },
-        { id: 'gemini-2.5-flash-exp', name: 'Gemini 2.5 Flash' }
-    ],
-    'openai': [
-        { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
-        { id: 'gpt-5-mini', name: 'GPT-5 Mini' }
-    ],
-    'anthropic': [
-        { id: 'claude-3-5-haiku-latest', name: 'Claude 3.5 Haiku' },
-        { id: 'claude-4-5-haiku-latest', name: 'Claude 4.5 Haiku' }
-    ]
-};
 
 interface ChatMessage {
     role: 'user' | 'ai' | 'system';
@@ -277,11 +262,15 @@ export class TerminalView extends ItemView {
         }, 50);
     }
 
+    getProviderModels(): ModelConfig[] {
+        return this.plugin.settings.modelConfigs[this.currentProvider];
+    }
+
     updateModelSelector() {
         if (!this.modelSelectEl) return;
         this.modelSelectEl.empty();
 
-        const models = PROVIDER_MODELS[this.currentProvider];
+        const models = this.getProviderModels();
         models.forEach(m => {
             const opt = this.modelSelectEl.createEl("option", {
                 value: m.id,
@@ -324,9 +313,9 @@ export class TerminalView extends ItemView {
             });
             // Use standard event listener
             tab.addEventListener('click', () => {
-                this.currentProvider = p.id as any;
-                // Set default model for new provider
-                this.currentModel = PROVIDER_MODELS[this.currentProvider][0].id;
+                this.currentProvider = p.id as 'gemini' | 'openai' | 'anthropic';
+                const models = this.getProviderModels();
+                this.currentModel = models.length > 0 ? models[0].id : '';
 
                 this.refreshStyle();
                 this.refreshHeader();
@@ -519,6 +508,11 @@ ${content}`;
         }
     }
 
+    getCurrentModelConfig(): ModelConfig | undefined {
+        const models = this.getProviderModels();
+        return models.find(m => m.id === this.currentModel);
+    }
+
     async processCommand(input: string) {
         let contextText = "";
         for (const file of this.pinnedNotes) {
@@ -526,7 +520,8 @@ ${content}`;
             contextText += `\n=== NOTE: ${file.basename} ===\n${content.substring(0, 10000)}...\n`;
         }
 
-        const systemPrompt = "You are an expert knowledge synthesizer. Output in Markdown.";
+        const modelConfig = this.getCurrentModelConfig();
+        const systemPrompt = modelConfig?.promptTemplate || "You are an expert knowledge synthesizer. Output in Markdown.";
         const fullPrompt = `Context:\n${contextText}\n\nInstruction:\n${input}`;
 
         this.chatHistory.push({ role: 'system', content: "Generating..." });
