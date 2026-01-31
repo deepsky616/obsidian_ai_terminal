@@ -32,7 +32,7 @@ export class TerminalView extends ItemView {
     }
 
     // UI State
-    currentProvider: 'gemini' | 'openai' | 'anthropic' = 'gemini';
+    currentProvider: 'gemini' | 'openai' | 'claude' = 'gemini';
     currentModel: string = 'gemini-2.0-flash-exp';
 
     // UI Elements
@@ -288,7 +288,7 @@ export class TerminalView extends ItemView {
         const styleMap = {
             'gemini': 'gemini',
             'openai': 'chatgpt',
-            'anthropic': 'claude'
+            'claude': 'claude'
         };
         this.contentEl.addClass(`ui-style-${styleMap[this.currentProvider]}`);
     }
@@ -302,7 +302,7 @@ export class TerminalView extends ItemView {
         const providers = [
             { id: 'gemini', label: 'Gemini' },
             { id: 'openai', label: 'ChatGPT' },
-            { id: 'anthropic', label: 'Claude' }
+            { id: 'claude', label: 'Claude' }
         ];
 
         providers.forEach(p => {
@@ -313,7 +313,7 @@ export class TerminalView extends ItemView {
             });
             // Use standard event listener
             tab.addEventListener('click', () => {
-                this.currentProvider = p.id as 'gemini' | 'openai' | 'anthropic';
+                this.currentProvider = p.id as 'gemini' | 'openai' | 'claude';
                 const models = this.getProviderModels();
                 this.currentModel = models.length > 0 ? models[0].id : '';
 
@@ -572,6 +572,11 @@ ${content}`;
             new Notice(`Using: ${customCommand.name}`);
         }
 
+        const skillsPrompt = this.plugin.getActiveSkillsPrompt();
+        if (skillsPrompt) {
+            systemPrompt += skillsPrompt;
+        }
+
         const fullPrompt = `Context:\n${contextText}\n\nInstruction:\n${userMessage}`;
 
         this.chatHistory.push({ role: 'system', content: "Generating..." });
@@ -585,8 +590,8 @@ ${content}`;
                 response = await AIService.callGoogle(settings.googleApiKey, modelId, systemPrompt, fullPrompt);
             } else if (provider === 'openai') {
                 response = await AIService.callOpenAI(settings.openaiApiKey, modelId, systemPrompt, fullPrompt);
-            } else if (provider === 'anthropic') {
-                response = await AIService.callAnthropic(settings.anthropicApiKey, modelId, systemPrompt, fullPrompt);
+            } else if (provider === 'claude') {
+                response = await AIService.callClaude(settings.claudeApiKey, modelId, systemPrompt, fullPrompt);
             }
 
             this.chatHistory.pop();

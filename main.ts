@@ -1,9 +1,17 @@
-import { App, Plugin, PluginSettingTab, Setting, WorkspaceLeaf, TextAreaComponent } from 'obsidian';
+import { App, Plugin, PluginSettingTab, Setting, WorkspaceLeaf, TextAreaComponent, Notice } from 'obsidian';
 import { TerminalView, TERMINAL_VIEW_TYPE } from './src/TerminalView';
+
+export interface Skill {
+    id: string;
+    name: string;
+    description: string;
+    instructions: string;
+    enabled: boolean;
+}
 
 export interface CustomCommand {
     id: string;
-    provider: 'gemini' | 'openai' | 'anthropic';
+    provider: 'gemini' | 'openai' | 'claude';
     modelId: string;
     name: string;
     command: string;
@@ -13,9 +21,10 @@ export interface CustomCommand {
 export interface PluginSettings {
     googleApiKey: string;
     openaiApiKey: string;
-    anthropicApiKey: string;
+    claudeApiKey: string;
     defaultFolder: string;
     customCommands: CustomCommand[];
+    skills: Skill[];
 }
 
 const PROMPT_TEMPLATES = {
@@ -145,7 +154,7 @@ export const PROVIDER_MODELS = {
         { id: 'gpt-4', name: 'GPT-4' },
         { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
     ],
-    anthropic: [
+    claude: [
         { id: 'claude-sonnet-4-5-20250929', name: 'Claude Sonnet 4.5' },
         { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5' },
         { id: 'claude-opus-4-5-20251101', name: 'Claude Opus 4.5' },
@@ -158,15 +167,16 @@ export const PROVIDER_MODELS = {
 const DEFAULT_CUSTOM_COMMANDS: CustomCommand[] = [
     { id: '1', provider: 'gemini', modelId: 'gemini-2.5-flash', name: 'Gemini Flash', command: '/gemini', promptTemplate: PROMPT_TEMPLATES.basic },
     { id: '2', provider: 'openai', modelId: 'gpt-4o-mini', name: 'GPT-4o Mini', command: '/gpt', promptTemplate: PROMPT_TEMPLATES.basic },
-    { id: '3', provider: 'anthropic', modelId: 'claude-haiku-4-5-20251001', name: 'Claude Haiku', command: '/claude', promptTemplate: PROMPT_TEMPLATES.basic },
+    { id: '3', provider: 'claude', modelId: 'claude-haiku-4-5-20251001', name: 'Claude Haiku', command: '/claude', promptTemplate: PROMPT_TEMPLATES.basic },
 ];
 
 const DEFAULT_SETTINGS: PluginSettings = {
     googleApiKey: '',
     openaiApiKey: '',
-    anthropicApiKey: '',
+    claudeApiKey: '',
     defaultFolder: '',
-    customCommands: DEFAULT_CUSTOM_COMMANDS
+    customCommands: DEFAULT_CUSTOM_COMMANDS,
+    skills: []
 }
 
 export default class AITerminalPlugin extends Plugin {
@@ -238,6 +248,48 @@ export default class AITerminalPlugin extends Plugin {
     async saveSettings() {
         await this.saveData(this.settings);
     }
+
+    async saveSkillFile(skill: Skill) {
+        const skillsDir = '.obsidian/skills';
+        const folderExists = this.app.vault.getAbstractFileByPath(skillsDir);
+        if (!folderExists) {
+            await this.app.vault.createFolder(skillsDir);
+        }
+        const fileName = skill.name.replace(/[\\/:*?"<>|]/g, '-').toLowerCase();
+        const filePath = `${skillsDir}/${fileName}/SKILL.md`;
+        const subDir = `${skillsDir}/${fileName}`;
+        const subDirExists = this.app.vault.getAbstractFileByPath(subDir);
+        if (!subDirExists) {
+            await this.app.vault.createFolder(subDir);
+        }
+        const content = `---\nname: ${skill.name}\ndescription: ${skill.description}\n---\n\n${skill.instructions}`;
+        const existing = this.app.vault.getAbstractFileByPath(filePath);
+        if (existing) {
+            await this.app.vault.modify(existing as any, content);
+        } else {
+            await this.app.vault.create(filePath, content);
+        }
+    }
+
+    async deleteSkillFile(skill: Skill) {
+        const fileName = skill.name.replace(/[\\/:*?"<>|]/g, '-').toLowerCase();
+        const dirPath = `.obsidian/skills/${fileName}`;
+        const dir = this.app.vault.getAbstractFileByPath(dirPath);
+        if (dir) {
+            await this.app.vault.delete(dir, true);
+        }
+    }
+
+    getActiveSkillsPrompt(): string {
+        const activeSkills = this.settings.skills.filter(s => s.enabled);
+        if (activeSkills.length === 0) return '';
+        let prompt = '\n\n<skills>\n';
+        activeSkills.forEach(skill => {
+            prompt += `<skill name="${skill.name}">\n${skill.instructions}\n</skill>\n`;
+        });
+        prompt += '</skills>';
+        return prompt;
+    }
 }
 
 class AITerminalSettingTab extends PluginSettingTab {
@@ -279,13 +331,13 @@ class AITerminalSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(containerEl)
-            .setName('Anthropic API Key')
-            .setDesc('Enter your Anthropic API Key')
+            .setName('Claude API Key')
+            .setDesc('Enter your Claude API Key')
             .addText(text => text
                 .setPlaceholder('sk-ant-...')
-                .setValue(this.plugin.settings.anthropicApiKey)
+                .setValue(this.plugin.settings.claudeApiKey)
                 .onChange(async (value) => {
-                    this.plugin.settings.anthropicApiKey = value;
+                    this.plugin.settings.claudeApiKey = value;
                     await this.plugin.saveSettings();
                 }));
 
@@ -382,9 +434,9 @@ class AITerminalSettingTab extends PluginSettingTab {
                 .addDropdown(dropdown => dropdown
                     .addOption('gemini', 'Google Gemini')
                     .addOption('openai', 'OpenAI')
-                    .addOption('anthropic', 'Anthropic')
+                    .addOption('claude', 'Claude')
                     .setValue(cmd.provider)
-                    .onChange(async (value: 'gemini' | 'openai' | 'anthropic') => {
+                    .onChange(async (value: 'gemini' | 'openai' | 'claude') => {
                         this.plugin.settings.customCommands[index].provider = value;
                         const models = PROVIDER_MODELS[value];
                         this.plugin.settings.customCommands[index].modelId = models[0].id;
@@ -498,6 +550,148 @@ class AITerminalSettingTab extends PluginSettingTab {
                     };
                     this.plugin.settings.customCommands.push(newCommand);
                     await this.plugin.saveSettings();
+                    this.display();
+                }));
+
+        // Skills Section
+        containerEl.createEl('h3', { text: 'Skills' });
+        containerEl.createEl('p', { 
+            text: 'Add skills to extend AI capabilities. Skills are saved as SKILL.md files in .obsidian/skills/ and injected into system prompts.',
+            cls: 'setting-item-description'
+        });
+
+        const skillsListContainer = containerEl.createDiv({ cls: 'command-list-container' });
+        const skills = this.plugin.settings.skills;
+
+        skills.forEach((skill, index) => {
+            const skillItem = skillsListContainer.createDiv({ cls: 'command-list-item' });
+            
+            const skillHeader = skillItem.createDiv({ cls: 'command-list-header' });
+            const skillInfo = skillHeader.createDiv({ cls: 'command-list-info' });
+            
+            const toggleEl = skillInfo.createEl('input', { 
+                type: 'checkbox',
+                cls: 'skill-toggle',
+            }) as HTMLInputElement;
+            toggleEl.checked = skill.enabled;
+            toggleEl.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                this.plugin.settings.skills[index].enabled = toggleEl.checked;
+                await this.plugin.saveSettings();
+            });
+
+            skillInfo.createEl('span', { text: skill.name, cls: 'command-name' });
+            skillInfo.createEl('span', { text: ` — ${skill.description}`, cls: 'skill-description-inline' });
+            
+            const headerActions = skillHeader.createDiv({ cls: 'command-header-actions' });
+            const deleteBtn = headerActions.createEl('button', { 
+                cls: 'command-delete-btn',
+                attr: { 'aria-label': 'Delete skill' }
+            });
+            deleteBtn.innerHTML = '×';
+            deleteBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                await this.plugin.deleteSkillFile(skill);
+                this.plugin.settings.skills.splice(index, 1);
+                await this.plugin.saveSettings();
+                this.display();
+            });
+            
+            const chevron = headerActions.createEl('span', { cls: 'command-chevron', text: '›' });
+            
+            const skillDetails = skillItem.createDiv({ cls: 'command-details hidden' });
+            
+            skillHeader.addEventListener('click', (e) => {
+                if ((e.target as HTMLElement).closest('.command-delete-btn') || (e.target as HTMLElement).closest('.skill-toggle')) return;
+                
+                const isHidden = skillDetails.hasClass('hidden');
+                skillsListContainer.querySelectorAll('.command-details').forEach(el => el.addClass('hidden'));
+                skillsListContainer.querySelectorAll('.command-chevron').forEach(el => el.removeClass('expanded'));
+                
+                if (isHidden) {
+                    skillDetails.removeClass('hidden');
+                    chevron.addClass('expanded');
+                }
+            });
+
+            new Setting(skillDetails)
+                .setName('Name')
+                .setDesc('Unique skill name (used as folder name)')
+                .addText(text => text
+                    .setPlaceholder('e.g., code-review')
+                    .setValue(skill.name)
+                    .onChange(async (value) => {
+                        this.plugin.settings.skills[index].name = value;
+                        await this.plugin.saveSettings();
+                        skillInfo.querySelector('.command-name')!.textContent = value;
+                    }));
+
+            new Setting(skillDetails)
+                .setName('Description')
+                .setDesc('Brief description of what this skill does and when to use it')
+                .addText(text => text
+                    .setPlaceholder('e.g., Expert code reviewer for TypeScript projects')
+                    .setValue(skill.description)
+                    .onChange(async (value) => {
+                        this.plugin.settings.skills[index].description = value;
+                        await this.plugin.saveSettings();
+                    }));
+
+            skillDetails.createEl('div', { cls: 'prompt-section-header', text: 'Instructions' });
+            skillDetails.createEl('p', { 
+                cls: 'prompt-section-desc',
+                text: 'Detailed instructions, workflows, and guidance for the AI to follow when this skill is active.'
+            });
+
+            const textAreaContainer = skillDetails.createDiv({ cls: 'prompt-template-container' });
+            const textArea = new TextAreaComponent(textAreaContainer);
+            textArea.setValue(skill.instructions);
+            textArea.inputEl.rows = 10;
+            textArea.inputEl.style.width = '100%';
+            textArea.onChange(async (value) => {
+                this.plugin.settings.skills[index].instructions = value;
+                await this.plugin.saveSettings();
+            });
+
+            const skillActionContainer = skillDetails.createDiv({ cls: 'command-action-container' });
+            
+            const cancelBtn = skillActionContainer.createEl('button', { 
+                cls: 'command-action-btn cancel-btn',
+                text: 'Cancel' 
+            });
+            cancelBtn.addEventListener('click', () => {
+                skillDetails.addClass('hidden');
+                chevron.removeClass('expanded');
+            });
+
+            const saveBtn = skillActionContainer.createEl('button', { 
+                cls: 'command-action-btn save-btn',
+                text: 'Save & Export' 
+            });
+            saveBtn.addEventListener('click', async () => {
+                await this.plugin.saveSettings();
+                await this.plugin.saveSkillFile(skill);
+                skillDetails.addClass('hidden');
+                chevron.removeClass('expanded');
+                new Notice(`Skill "${skill.name}" saved to .obsidian/skills/`);
+            });
+        });
+
+        new Setting(containerEl)
+            .addButton(button => button
+                .setButtonText('+ Add Skill')
+                .setCta()
+                .onClick(async () => {
+                    const newSkill: Skill = {
+                        id: Date.now().toString(),
+                        name: 'new-skill',
+                        description: 'Describe what this skill does',
+                        instructions: '# Skill Name\n\n## Instructions\nAdd your instructions here.',
+                        enabled: true
+                    };
+                    this.plugin.settings.skills.push(newSkill);
+                    await this.plugin.saveSettings();
+                    await this.plugin.saveSkillFile(newSkill);
                     this.display();
                 }));
     }

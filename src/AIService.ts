@@ -36,7 +36,7 @@ export class AIService {
         return resp.json.choices[0].message.content;
     }
 
-    static async callAnthropic(apiKey: string, model: string, systemPrompt: string, userPrompt: string): Promise<string> {
+    static async callClaude(apiKey: string, model: string, systemPrompt: string, userPrompt: string): Promise<string> {
         if (!apiKey) throw new Error("Anthropic API Key is missing");
         const url = "https://api.anthropic.com/v1/messages";
         const body = {
